@@ -12,5 +12,5 @@ type Config struct {
 	Log   logger.Options `toml:"log_options" json:"log_options"`
 
 	Router    *chi.Mux
-	Endpoints []router.Endpoint
+	Endpoints router.Endpoints
 }
