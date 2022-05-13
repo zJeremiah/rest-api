@@ -1,0 +1,8 @@
+# binary
+rest-api
+rest-api.exe
+
+.idea
+.vscode
+
+deploy/bin

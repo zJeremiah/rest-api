@@ -9,9 +9,7 @@ version=$(shell git describe --tags --always)
 endif
 
 build: clean
-	CGO_ENABLED=0 GOOS=linux go build ${GOFLAGS} -o ${BLDDIR}/
-	go build ${GOFLAGS} -o ${BLDDIR}/local/
-
+	go build ${GOFLAGS} -o ${BLDDIR}
 
 clean: # clean up build directory
 	rm -rf $(BLDDIR)
