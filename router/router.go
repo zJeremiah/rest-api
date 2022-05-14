@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	jsoniter "github.com/json-iterator/go"
-	"github.com/rest-api/apierror"
+	"github.com/rest-api/internal/apierr"
 )
 
 type Endpoints []Endpoint
@@ -66,9 +66,9 @@ func (rm RequestMethod) String() string {
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var respBody []byte
 	if err := h(w, r); err != nil {
-		a, ok := err.(*apierror.APIError)
+		a, ok := err.(*apierr.APIError)
 		if ok {
-			respBody, _ = json.Marshal(a.External)
+			respBody, _ = json.Marshal(a.RespBody)
 		} else {
 			respBody = []byte(`{"msg":"an error has occured"}`)
 			a.Code = http.StatusInternalServerError
@@ -84,7 +84,7 @@ func InitRoutes() Endpoints {
 	var all Endpoints
 	all = append(all,
 		HomeRoute(),
-		TestRoute(),
+		TestErrRoute(),
 	)
 
 	return all

@@ -6,3 +6,4 @@ rest-api.exe
 .vscode
 
 deploy/bin
+__debug_bin

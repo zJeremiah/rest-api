@@ -1,4 +1,4 @@
-package apierror
+package apierr
 
 import (
 	"context"
@@ -9,10 +9,10 @@ import (
 
 type APIError struct {
 	Internal `json:"internal,omitempty"`
-	External `json:"external,omitempty"`
+	RespBody `json:"response_body,omitempty"`
 }
 
-type External struct {
+type RespBody struct {
 	Msg    string `json:"message,omitempty"`
 	Code   int    `json:"code,omitempty"`
 	Status string `json:"status,omitempty"`
@@ -26,7 +26,7 @@ type Internal struct {
 var json = jsoniter.ConfigFastest
 
 func (a *APIError) Error() string {
-	body, _ := json.MarshalToString(a.External)
+	body, _ := json.MarshalToString(a.RespBody)
 	return body
 }
 
@@ -48,7 +48,7 @@ func NewError(internal, external string, code int, err error) *APIError {
 			Msg: internal,
 			Err: err,
 		},
-		External: External{
+		RespBody: RespBody{
 			Msg:    external,
 			Code:   code,
 			Status: http.StatusText(code),
@@ -62,7 +62,7 @@ func NewError(internal, external string, code int, err error) *APIError {
 }
 
 func (a *APIError) Write(w http.ResponseWriter) {
-	body, _ := json.Marshal(a.External)
+	body, _ := json.Marshal(a.RespBody)
 	w.WriteHeader(a.Code)
 	w.Write(body)
 }

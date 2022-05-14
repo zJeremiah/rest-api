@@ -2,6 +2,7 @@ package logger
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"log"
 	"net/http"
@@ -9,7 +10,7 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pcelvng/task-tools/file"
-	"github.com/rest-api/apierror"
+	"github.com/rest-api/internal/apierr"
 )
 
 // File log options
@@ -23,17 +24,17 @@ type Options struct {
 
 // Request represents an external request to the api
 type Request struct {
-	Host        string             `json:"host"`
-	URI         string             `json:"request_uri"`
-	Time        time.Time          `json:"request_time"`
-	Body        interface{}        `json:"request_body,omitempty"`
-	ContentLen  int64              `json:"content_length,omitempty"`
-	Method      string             `json:"method"`
-	RemoteAddr  string             `json:"remote_address"`
-	UserAgent   string             `json:"user_agent,omitempty"`
-	ContentType string             `json:"content_type,omitempty"`
-	APIError    *apierror.APIError `json:"api_error,omitempty"`
-	Latency     float64            `json:"latency"`
+	Host        string           `json:"host"`
+	URI         string           `json:"request_uri"`
+	Time        time.Time        `json:"request_time"`
+	Body        interface{}      `json:"request_body,omitempty"`
+	ContentLen  int64            `json:"content_length,omitempty"`
+	Method      string           `json:"method"`
+	RemoteAddr  string           `json:"remote_address"`
+	UserAgent   string           `json:"user_agent,omitempty"`
+	ContentType string           `json:"content_type,omitempty"`
+	APIError    *apierr.APIError `json:"api_error,omitempty"`
+	Latency     float64          `json:"latency"`
 }
 
 var json = jsoniter.ConfigFastest
@@ -41,7 +42,7 @@ var json = jsoniter.ConfigFastest
 func (o *Options) WriteRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		req := Request{
+		req := &Request{
 			Host:        r.Host,
 			URI:         r.RequestURI,
 			Time:        time.Now().UTC(),
@@ -53,12 +54,8 @@ func (o *Options) WriteRequest(next http.Handler) http.Handler {
 			ContentType: r.Header.Get("content-type"),
 		}
 
+		r = r.WithContext(context.WithValue(r.Context(), "request", req))
 		next.ServeHTTP(rw, r)
-
-		apiErr, found := r.Context().Value("error").(*apierror.APIError)
-		if found {
-			req.APIError = apiErr
-		}
 
 		req.Latency = time.Since(start).Seconds()
 		b, err := json.Marshal(req)

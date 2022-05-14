@@ -30,7 +30,6 @@ func main() {
 	c.Router.Use(c.Log.WriteRequest)
 
 	c.Endpoints.SetupRoutes(c.Router)
-
 	log.Printf("running api on port %d", c.Port)
 	http.ListenAndServe(fmt.Sprintf(":%d", c.Port), c.Router)
 }
