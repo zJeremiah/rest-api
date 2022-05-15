@@ -10,7 +10,6 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pcelvng/task-tools/file"
-	"github.com/rest-api/internal/apierr"
 )
 
 // File log options
@@ -23,26 +22,45 @@ type Options struct {
 }
 
 // Request represents an external request to the api
-type Request struct {
-	Host        string           `json:"host"`
-	URI         string           `json:"request_uri"`
-	Time        time.Time        `json:"request_time"`
-	Body        interface{}      `json:"request_body,omitempty"`
-	ContentLen  int64            `json:"content_length,omitempty"`
-	Method      string           `json:"method"`
-	RemoteAddr  string           `json:"remote_address"`
-	UserAgent   string           `json:"user_agent,omitempty"`
-	ContentType string           `json:"content_type,omitempty"`
-	APIError    *apierr.APIError `json:"api_error,omitempty"`
-	Latency     float64          `json:"latency"`
+type APIErr struct {
+	Internal `json:"internal,omitempty"`
+	RespBody `json:"response_body,omitempty"`
 }
+
+type RespBody struct {
+	Msg    string `json:"message,omitempty"`
+	Code   int    `json:"code,omitempty"`
+	Status string `json:"status,omitempty"`
+}
+
+type Internal struct {
+	Msg     string `json:"message,omitempty"`
+	Err     error  `json:"error,omitempty"`
+	ErrText string `json:"error_text,omitempty"`
+}
+
+type Log struct {
+	Host        string      `json:"host"`
+	URI         string      `json:"request_uri"`
+	Time        time.Time   `json:"request_time"`
+	Body        interface{} `json:"request_body,omitempty"`
+	ContentLen  int64       `json:"content_length,omitempty"`
+	Method      string      `json:"method"`
+	RemoteAddr  string      `json:"remote_address"`
+	UserAgent   string      `json:"user_agent,omitempty"`
+	ContentType string      `json:"content_type,omitempty"`
+	APIError    *APIErr     `json:"api_error,omitempty"`
+	Latency     float64     `json:"latency"`
+}
+
+type Key string
 
 var json = jsoniter.ConfigFastest
 
 func (o *Options) WriteRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		req := &Request{
+		req := &Log{
 			Host:        r.Host,
 			URI:         r.RequestURI,
 			Time:        time.Now().UTC(),
@@ -54,7 +72,7 @@ func (o *Options) WriteRequest(next http.Handler) http.Handler {
 			ContentType: r.Header.Get("content-type"),
 		}
 
-		r = r.WithContext(context.WithValue(r.Context(), "request", req))
+		r = r.WithContext(context.WithValue(r.Context(), Key("request"), req))
 		next.ServeHTTP(rw, r)
 
 		req.Latency = time.Since(start).Seconds()
@@ -101,4 +119,48 @@ func retrieveBody(req *http.Request) (i interface{}) {
 	}
 
 	return i
+}
+
+func (a *APIErr) Error() string {
+	body, _ := json.MarshalToString(a.RespBody)
+	return body
+}
+
+func AddCTX(ctx context.Context, a *APIErr) context.Context {
+	return context.WithValue(ctx, Key("error"), a)
+}
+
+func FromContext(ctx context.Context) (found bool, a APIErr) {
+	v := ctx.Value("error")
+	if v == nil {
+		return false, APIErr{}
+	}
+	return true, v.(APIErr)
+}
+
+func NewError(r *http.Request, internal, external string, code int, err error) *APIErr {
+	req := r.Context().Value("request").(*Log)
+	a := &APIErr{
+		Internal: Internal{
+			Msg: internal,
+			Err: err,
+		},
+		RespBody: RespBody{
+			Msg:    external,
+			Code:   code,
+			Status: http.StatusText(code),
+		},
+	}
+
+	if err != nil {
+		a.ErrText = err.Error()
+	}
+	req.APIError = a
+	return a
+}
+
+func (a *APIErr) Write(w http.ResponseWriter) {
+	body, _ := json.Marshal(a.RespBody)
+	w.WriteHeader(a.Code)
+	w.Write(body)
 }

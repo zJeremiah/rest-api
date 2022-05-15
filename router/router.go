@@ -85,6 +85,7 @@ func InitRoutes() Endpoints {
 	all = append(all,
 		HomeRoute(),
 		TestErrRoute(),
+		PostRoute(),
 	)
 
 	return all
