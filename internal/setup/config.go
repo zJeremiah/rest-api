@@ -2,7 +2,7 @@ package setup
 
 import (
 	"github.com/go-chi/chi/v5"
-	"github.com/rest-api/logger"
+	"github.com/rest-api/internal/logger"
 	"github.com/rest-api/router"
 )
 

@@ -10,7 +10,7 @@ import (
 	"github.com/hydronica/go-config"
 	"github.com/rest-api/internal/setup"
 	"github.com/rest-api/internal/version"
-	"github.com/rest-api/logger"
+	"github.com/rest-api/internal/logger"
 	"github.com/rest-api/router"
 )
 
