@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	jsoniter "github.com/json-iterator/go"
-	"github.com/rest-api/internal/apierr"
+	"github.com/rest-api/internal/logger"
 )
 
 type Endpoints []Endpoint
@@ -22,16 +22,20 @@ const (
 	DELETE
 )
 
+// Endpoint object is used to setup an api endpoint in the api
+// this is used to make the correct request to the handler
+// and also used to generate the slate api docs
 type Endpoint struct {
-	Path         string
-	Method       RequestMethod
-	RequestType  string
-	ResponseType string
-	RequestBody  interface{}
-	ResponseBody interface{}
-	HandlerFunc  Handler
-	Description  string
-	Pretty       bool
+	Group        string        // this is the group that the endpoint belongs to
+	Path         string        // the URI path for the endpoint
+	Method       RequestMethod // the HTTP method for the endpoint GET, POST etc...
+	RequestType  string        // The request type is the ContentType for the request
+	ResponseType string        // This is the ContentType that will be returned in the response (normally application/json)
+	RequestBody  interface{}   // This is used to generate the api docs JSON object string for the request
+	ResponseBody interface{}   // This is used to generate the api docs JSON object string for the response
+	HandlerFunc  Handler       // the Handler function is called when the router matches the endpoint path
+	Description  string        // The description of the endpoint for api docs
+	Pretty       bool          // output the json string as pretty format when true
 }
 
 const ContentJSON = "application/json"
@@ -66,7 +70,7 @@ func (rm RequestMethod) String() string {
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var respBody []byte
 	if err := h(w, r); err != nil {
-		a, ok := err.(*apierr.APIError)
+		a, ok := err.(*logger.APIErr)
 		if ok {
 			respBody, _ = json.Marshal(a.RespBody)
 		} else {
@@ -91,12 +95,16 @@ func InitRoutes() Endpoints {
 	return all
 }
 
+// SetupRoutes will take each endpoint and build
+//  all the rest api endpoints, setting the handler func, path and method
 func (ep Endpoints) SetupRoutes(r chi.Router) {
 	for _, e := range ep {
 		r.Method(e.Method.String(), e.Path, e.HandlerFunc)
 	}
 }
 
+// Respond is a helper method to automate the data for the response
+// sets the response code, content type, and body
 func (e *Endpoint) Respond(w http.ResponseWriter) {
 	var respBody []byte
 	respBody, _ = json.Marshal(e.ResponseBody)

@@ -138,6 +138,8 @@ func FromContext(ctx context.Context) (found bool, a APIErr) {
 	return true, v.(APIErr)
 }
 
+// NewError with take the http request and set a the api error in the request log
+// the api error is also returned
 func NewError(r *http.Request, internal, external string, code int, err error) *APIErr {
 	req := r.Context().Value("request").(*Log)
 	a := &APIErr{
