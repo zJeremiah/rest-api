@@ -7,10 +7,11 @@ import (
 )
 
 type Config struct {
-	Port  int            `toml:"port" json:"port" flag:"port"`
-	Debug bool           `toml:"debug" json:"debug" flag:"debug"`
+	Host  string         `toml:"host" comment:"environment hostname"`
+	Port  int            `toml:"port" json:"port" flag:"port" comment:"http port number"`
+	Debug bool           `toml:"debug" json:"debug" flag:"debug" comment:"show debug logging"`
 	Log   logger.Options `toml:"log_options" json:"log_options"`
 
-	Router    *chi.Mux
-	Endpoints router.Endpoints
+	Router      *chi.Mux
+	RouteGroups router.Groups
 }

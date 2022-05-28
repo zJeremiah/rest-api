@@ -14,8 +14,8 @@ import (
 
 // File log options
 type Options struct {
-	StdOut        io.Writer
-	Writer        file.Writer
+	stdOut        io.Writer
+	writer        file.Writer
 	Rotation      string `toml:"rotation" json:"rotation"`
 	FilePath      string `toml:"file_path" json:"file_path"`
 	*file.Options `toml:"file_options" json:"file_options"`
@@ -57,6 +57,10 @@ type Key string
 
 var json = jsoniter.ConfigFastest
 
+func (o *Options) StdOut(wc io.WriteCloser) {
+	o.stdOut = wc
+}
+
 func (o *Options) WriteRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		start := time.Now()
@@ -81,11 +85,11 @@ func (o *Options) WriteRequest(next http.Handler) http.Handler {
 			log.Printf("error marshal request object %v", err)
 		}
 
-		_, err = o.StdOut.Write(b)
+		_, err = o.stdOut.Write(b)
 		if err != nil {
 			log.Printf("error writing to stdout %v", err)
 		}
-		o.StdOut.Write([]byte("\n"))
+		o.stdOut.Write([]byte("\n"))
 	})
 }
 

@@ -4,6 +4,7 @@ rest-api.exe
 
 .idea
 .vscode
+.DS_Store
 
 deploy/bin
 __debug_bin

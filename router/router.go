@@ -1,16 +1,14 @@
 package router
 
 import (
+	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/rest-api/internal/logger"
 )
-
-type Endpoints []Endpoint
-
-type RequestMethod uint
 
 const (
 	GET = iota
@@ -21,12 +19,24 @@ const (
 	PUT
 	DELETE
 )
+const ContentJSON = "application/json"
+
+type RequestMethod uint
+
+type Group struct {
+	Name        string    // the name of the group path, is part of the path /v1/name/{path}
+	Version     string    // the version pathing v1, v2
+	Description string    // a simple name to describe this group
+	Routes      Endpoints // the routes in this group
+}
+
+type Groups []Group
 
 // Endpoint object is used to setup an api endpoint in the api
 // this is used to make the correct request to the handler
 // and also used to generate the slate api docs
 type Endpoint struct {
-	Group        string        // this is the group that the endpoint belongs to
+	Name         string        // this is the reference name for the endpoint
 	Path         string        // the URI path for the endpoint
 	Method       RequestMethod // the HTTP method for the endpoint GET, POST etc...
 	RequestType  string        // The request type is the ContentType for the request
@@ -38,7 +48,7 @@ type Endpoint struct {
 	Pretty       bool          // output the json string as pretty format when true
 }
 
-const ContentJSON = "application/json"
+type Endpoints []Endpoint
 
 type Handler func(w http.ResponseWriter, r *http.Request) error
 
@@ -84,22 +94,60 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func InitRoutes() Endpoints {
-	var all Endpoints
-	all = append(all,
-		HomeRoute(),
-		TestErrRoute(),
-		PostRoute(),
-	)
+// InitGroups will initialize the endpoints organized by group
+// add new endpoint rout methods here to include them in the api request list
+// these are auto documented based on the endpoint values
+func InitGroups() Groups {
+	var g Groups
+	g = append(g, Group{
+		Name:        "", // base path has no name
+		Version:     "", // base path has no route
+		Description: "base route",
+		Routes:      Endpoints{HomeRoute()},
+	})
 
-	return all
+	g = append(g, Group{
+		Name:        "test",
+		Version:     "v1",
+		Description: "v1 test routes",
+		Routes: Endpoints{
+			TestErrRoute(),
+			PostRoute(),
+		},
+	},
+		Group{
+			Name:        "test",
+			Version:     "v2",
+			Description: "v2 test routes",
+			Routes: Endpoints{
+				OtherRoute(),
+				OtherTestErrRoute(),
+				OtherPostRoute(),
+			},
+		})
+
+	return g
 }
 
 // SetupRoutes will take each endpoint and build
 //  all the rest api endpoints, setting the handler func, path and method
-func (ep Endpoints) SetupRoutes(r chi.Router) {
-	for _, e := range ep {
-		r.Method(e.Method.String(), e.Path, e.HandlerFunc)
+func (gs Groups) SetupRoutes(r chi.Router, debug bool) {
+	for _, g := range gs {
+		for _, e := range g.Routes {
+			path := e.Path
+			if g.Name != "" {
+				path = "/" + g.Name + path
+			}
+			if g.Version != "" {
+				path = "/" + g.Version + path
+			}
+
+			if debug {
+				log.Println("adding route", path)
+			}
+
+			r.Method(e.Method.String(), path, e.HandlerFunc)
+		}
 	}
 }
 
@@ -114,4 +162,19 @@ func (e *Endpoint) Respond(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", e.ResponseType)
 	w.WriteHeader(http.StatusOK)
 	w.Write(respBody)
+}
+
+// Validate is to verify that the groups of
+// endpoint routes have been setup correctly
+func Validate(groups Groups) error {
+	for _, g := range groups {
+		for _, e := range g.Routes {
+			if e.Path[:1] != "/" {
+				return fmt.Errorf("the path must start with a forward slash / %s %s %s (%s)",
+					e.Name, e.Method.String(), g.Name, e.Path)
+			}
+		}
+	}
+
+	return nil
 }
