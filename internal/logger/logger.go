@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-chi/chi/v5/middleware"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pcelvng/task-tools/file"
 )
@@ -41,6 +42,7 @@ type Internal struct {
 }
 
 type Log struct {
+	ID          string      `json:"id"`
 	Host        string      `json:"host"`
 	URI         string      `json:"request_uri"`
 	Time        time.Time   `json:"request_time"`
@@ -55,7 +57,9 @@ type Log struct {
 	NoLog       bool        `json:"-"` // will cancel the request log
 }
 
-type Key string
+type ctxRequestKey int
+
+const RequestKey ctxRequestKey = 0
 
 var json = jsoniter.ConfigFastest
 
@@ -65,9 +69,11 @@ func (o *Options) StdOut(wc io.WriteCloser) {
 
 func (o *Options) WriteRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		id := r.Context().Value(middleware.RequestIDKey).(string)
 		var err error
 		start := time.Now()
 		req := &Log{
+			ID:          id,
 			Host:        r.Host,
 			URI:         r.RequestURI,
 			Time:        time.Now().UTC(),
@@ -79,7 +85,7 @@ func (o *Options) WriteRequest(next http.Handler) http.Handler {
 			ContentType: r.Header.Get("content-type"),
 		}
 
-		r = r.WithContext(context.WithValue(r.Context(), Key("request"), req))
+		r = r.WithContext(context.WithValue(r.Context(), RequestKey, req))
 		next.ServeHTTP(rw, r)
 		if req.NoLog {
 			return // return without logging
@@ -141,10 +147,6 @@ func retrieveBody(req *http.Request) (i interface{}) {
 func (a *APIErr) Error() string {
 	body, _ := json.MarshalToString(a.RespBody)
 	return body
-}
-
-func AddCTX(ctx context.Context, a *APIErr) context.Context {
-	return context.WithValue(ctx, Key("error"), a)
 }
 
 func FromContext(ctx context.Context) (found bool, a APIErr) {

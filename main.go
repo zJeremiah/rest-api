@@ -31,23 +31,28 @@ func main() {
 	setup.InitConfig(c)
 	setup.SetRouter(chi.NewRouter())
 	setup.Router().MethodNotAllowed(func(rw http.ResponseWriter, r *http.Request) {
-		req := r.Context().Value(logger.Key("request")).(*logger.Log)
-		req.NoLog = true
+		req, ok := r.Context().Value(logger.RequestKey).(*logger.Log)
+		if ok {
+			req.NoLog = true
+		}
 		rw.WriteHeader(http.StatusMethodNotAllowed)
 	})
 
 	setup.Router().NotFound(func(rw http.ResponseWriter, r *http.Request) {
-		req, ok := r.Context().Value(logger.Key("request")).(*logger.Log)
+		req, ok := r.Context().Value(logger.RequestKey).(*logger.Log)
 		if ok {
 			req.NoLog = true
 		}
 		rw.WriteHeader(http.StatusNotFound)
 	})
 
-	setup.Router().Use(c.Log.WriteRequest)
-	setup.Router().Use(middleware.StripSlashes)
+	// order matters, middleware is called in the order added
+	setup.Router().Use(middleware.Recoverer)
 	setup.Router().Use(middleware.Timeout(time.Minute))
+	setup.Router().Use(middleware.RequestID)
 	setup.Router().Use(Cors())
+	setup.Router().Use(middleware.StripSlashes)
+	setup.Router().Use(c.Log.WriteRequest)
 
 	router.InitGroups()
 	setup.Routes()

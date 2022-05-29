@@ -1,6 +1,7 @@
 package router
 
 import (
+	"fmt"
 	"net/http"
 
 	jsoniter "github.com/json-iterator/go"
@@ -16,7 +17,9 @@ func InitGroups() {
 
 	setup.AddEndpoints("", "",
 		HomeRoute(),
-		DocsRoute())
+		DocsRoute(),
+		EndPointStruct(),
+	)
 	setup.AddEndpoints("v1", "test",
 		TestErrRoute(),
 		PostRoute())
@@ -30,13 +33,19 @@ func InitGroups() {
 // Respond is a helper method to automate the data for the response
 // sets the response code, content type, and body
 // pretty will pretty print the json output for the response
-func Respond(w http.ResponseWriter, response interface{}, pretty bool) {
+func Respond(w http.ResponseWriter, response interface{}, pretty bool) error {
+	var err error
 	var respBody []byte
-	respBody, _ = json.Marshal(response)
 	if pretty {
-		respBody, _ = json.MarshalIndent(response, "", "  ")
+		respBody, err = json.MarshalIndent(response, "", "  ")
+	} else {
+		respBody, err = json.Marshal(response)
+	}
+	if err != nil {
+		return fmt.Errorf("marshal error for resposne body %w", err)
 	}
 	w.Header().Set("Content-Type", setup.ContentJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(respBody)
+	return nil
 }

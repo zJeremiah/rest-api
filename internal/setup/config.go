@@ -29,19 +29,19 @@ type Method uint
 // this is used to make the correct request to the handler
 // and also used to generate the slate api docs
 type Endpoint struct {
-	Version      string      // the version pathing v1, v2, etc...
-	Group        string      // the name of the group path, is part of the path /v1/name/{path}
-	Path         string      // the URI path for the just the endpoint must start with a forward slash /
-	Method       Method      // the HTTP method for the endpoint GET, POST etc...
-	RequestType  string      // The request type is the ContentType for the request
-	ResponseType string      // This is the ContentType that will be returned in the response (normally application/json)
-	RequestBody  interface{} // This is used to generate the api docs JSON object string for the request
-	ResponseBody interface{} // This is used to generate the api docs JSON object string for the response
-	HandlerFunc  Handler     // the Handler function is called when the router matches the endpoint path
-	RespFunc     Response    // a Response function is called to create an example of the endpoint response body (as json)
-	ReqFunc      Request     // a Request function is called to produce an example of the endpoint request body (as json)
-	Description  string      // The description of the endpoint for api docs
-	Pretty       bool        // output the json string as pretty format when true
+	Version      string      `json:"version"`       // the version pathing v1, v2, etc...
+	Group        string      `json:"group"`         // the name of the group path, is part of the path /v1/name/{path}
+	Path         string      `json:"path "`         // the URI path for the just the endpoint must start with a forward slash /
+	Method       Method      `json:"method"`        // the HTTP method for the endpoint GET, POST etc...
+	RequestType  string      `json:"request_type"`  // The request type is the ContentType for the request
+	ResponseType string      `json:"response_type"` // This is the ContentType that will be returned in the response (normally application/json)
+	RequestBody  interface{} `json:"request_body"`  // This is used to generate the api docs JSON object string for the request
+	ResponseBody interface{} `json:"response_body"` // This is used to generate the api docs JSON object string for the response
+	HandlerFunc  Handler     `json:"-"`             // the Handler function is called when the router matches the endpoint path
+	RespFunc     Response    `json:"-"`             // a Response function is called to create an example of the endpoint response body (as json)
+	ReqFunc      Request     `json:"-"`             // a Request function is called to produce an example of the endpoint request body (as json)
+	Description  string      `json:"description"`   // The description of the endpoint for api docs
+	Pretty       bool        `json:"pretty"`        // output the json string as pretty format when true
 }
 
 type Endpoints map[string]Endpoint
@@ -87,7 +87,7 @@ func (rm Method) String() string {
 // this is for error handling
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var respBody []byte
-	req := r.Context().Value(logger.Key("request")).(*logger.Log)
+	req := r.Context().Value(logger.RequestKey).(*logger.Log)
 	if err := h(w, r); err != nil {
 		a, ok := err.(*logger.APIErr)
 		if !ok {
