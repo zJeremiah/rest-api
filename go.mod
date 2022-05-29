@@ -12,6 +12,7 @@ require (
 require (
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/go-chi/cors v1.2.1 // indirect
 	github.com/go-ini/ini v1.62.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/hydronica/toml v0.4.2 // indirect

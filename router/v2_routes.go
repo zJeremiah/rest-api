@@ -5,90 +5,76 @@ import (
 	"net/http"
 
 	"github.com/rest-api/internal/logger"
+	"github.com/rest-api/internal/setup"
 	"github.com/rest-api/internal/version"
 )
 
-const otherGroup = "other_group"
-
-func OtherRoute() Endpoint {
-	e := Endpoint{
+func OtherRoute() setup.Endpoint {
+	e := setup.Endpoint{
 		Path:         "/",
-		Method:       GET,
-		ResponseType: ContentJSON,
-		ResponseBody: Home{
-			AppName: "rest-api",
-			Version: version.JSON(),
-		},
+		Method:       setup.GET,
+		ResponseType: setup.ContentJSON,
+		ResponseBody: "",
+		HandlerFunc:  OtherHome,
 	}
 
-	e.HandlerFunc = e.OtherHome
 	return e
 }
 
-// Welcome is an endpoint example for the root / path
-func (e *Endpoint) OtherHome(w http.ResponseWriter, r *http.Request) error {
-	e.Respond(w)
+// Welcome is an endpoint example for the root / path handler function
+func OtherHome(w http.ResponseWriter, r *http.Request) error {
+	Respond(w, version.JSON(), true)
 	return nil
 }
 
-func OtherTestErrRoute() Endpoint {
-	e := Endpoint{
-		Name:         "v2 test error",
+func OtherTestErrRoute() setup.Endpoint {
+	e := setup.Endpoint{
+		Description:  "v2 testing returned error",
 		Path:         "/error",
-		Method:       GET,
-		ResponseType: ContentJSON,
-		ResponseBody: Home{
-			AppName: "rest-api",
-			Version: version.JSON(),
-		},
+		Method:       setup.GET,
+		ResponseType: setup.ContentJSON,
+		HandlerFunc:  OtherTestError,
 	}
 
-	e.HandlerFunc = e.OtherTestError
 	return e
 }
 
 // TestError is an endpoint example of how an error is returned with the handler
 // Example is to test pushing an error to the logger middleware
-func (e *Endpoint) OtherTestError(w http.ResponseWriter, r *http.Request) error {
-	err := logger.NewError(r, // defines the error that will be returned
-		"internal error message",
-		"response body error message",
-		400,
-		errors.New("testing 404 error"))
+func OtherTestError(w http.ResponseWriter, r *http.Request) error {
+	err := errors.New("this is a testing error")
 	return err
 }
 
 // PostRoute defines the endpoint request/response info for documentation
-func OtherPostRoute() Endpoint {
-	e := Endpoint{
-		Name:         "v2 post test",
+func OtherPostRoute() setup.Endpoint {
+	e := setup.Endpoint{
+		Description:  "v2 other post test",
 		Path:         "/post",
-		Method:       POST,
-		RequestType:  ContentJSON,
+		Method:       setup.POST,
+		RequestType:  setup.ContentJSON,
 		RequestBody:  PostReq{}, // this defines what you expect from the request body
-		ResponseType: ContentJSON,
+		ResponseType: setup.ContentJSON,
 		ResponseBody: PostResp{}, // this defines what will be returned in the response body
 		Pretty:       true,
+		HandlerFunc:  OtherPostTest,
 	}
 
-	e.HandlerFunc = e.OtherPostTest
 	return e
 }
 
 // PostTest is the request handler function
-func (e *Endpoint) OtherPostTest(w http.ResponseWriter, r *http.Request) error {
+func OtherPostTest(w http.ResponseWriter, r *http.Request) error {
 	req := PostReq{}
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		// defines the error that will be returned, use this to set the request log with the error
-		err = logger.NewError(r,
+		err = logger.NewError(
 			"error decoding request body",
 			"could not decode request body",
 			400, err)
 		return err
 	}
-
-	e.RequestBody = req
 
 	resp := PostResp{
 		RID:    req.ID,
@@ -97,7 +83,7 @@ func (e *Endpoint) OtherPostTest(w http.ResponseWriter, r *http.Request) error {
 		RMap:   req.Map,
 		RArray: req.Array,
 	}
-	e.ResponseBody = resp
-	e.Respond(w) // writes the response code and body if there are no errors
+
+	Respond(w, resp, true) // writes the response code and body if there are no errors
 	return nil
 }

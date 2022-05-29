@@ -14,11 +14,12 @@ import (
 
 // File log options
 type Options struct {
-	stdOut        io.Writer
-	writer        file.Writer
+	stdOut io.Writer
+	//writer        file.Writer
 	Rotation      string `toml:"rotation" json:"rotation"`
 	FilePath      string `toml:"file_path" json:"file_path"`
 	*file.Options `toml:"file_options" json:"file_options"`
+	Pretty        bool `toml:"pretty" json:"pretty"`
 }
 
 // Request represents an external request to the api
@@ -35,7 +36,7 @@ type RespBody struct {
 
 type Internal struct {
 	Msg     string `json:"message,omitempty"`
-	Err     error  `json:"error,omitempty"`
+	Err     error  `json:"-"`
 	ErrText string `json:"error_text,omitempty"`
 }
 
@@ -49,8 +50,9 @@ type Log struct {
 	RemoteAddr  string      `json:"remote_address"`
 	UserAgent   string      `json:"user_agent,omitempty"`
 	ContentType string      `json:"content_type,omitempty"`
-	APIError    *APIErr     `json:"api_error,omitempty"`
+	APIError    *Internal   `json:"error,omitempty"`
 	Latency     float64     `json:"latency"`
+	NoLog       bool        `json:"-"` // will cancel the request log
 }
 
 type Key string
@@ -63,6 +65,7 @@ func (o *Options) StdOut(wc io.WriteCloser) {
 
 func (o *Options) WriteRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		var err error
 		start := time.Now()
 		req := &Log{
 			Host:        r.Host,
@@ -78,14 +81,24 @@ func (o *Options) WriteRequest(next http.Handler) http.Handler {
 
 		r = r.WithContext(context.WithValue(r.Context(), Key("request"), req))
 		next.ServeHTTP(rw, r)
-
+		if req.NoLog {
+			return // return without logging
+		}
+		var body []byte
 		req.Latency = time.Since(start).Seconds()
-		b, err := json.Marshal(req)
-		if err != nil {
-			log.Printf("error marshal request object %v", err)
+		if o.Pretty {
+			body, err = json.MarshalIndent(req, "", "  ")
+			if err != nil {
+				log.Printf("error marshal request object %v", err)
+			}
+		} else {
+			body, err = json.Marshal(req)
+			if err != nil {
+				log.Printf("error marshal request object %v", err)
+			}
 		}
 
-		_, err = o.stdOut.Write(b)
+		_, err = o.stdOut.Write(body)
 		if err != nil {
 			log.Printf("error writing to stdout %v", err)
 		}
@@ -144,8 +157,7 @@ func FromContext(ctx context.Context) (found bool, a APIErr) {
 
 // NewError with take the http request and set a the api error in the request log
 // the api error is also returned
-func NewError(r *http.Request, internal, external string, code int, err error) *APIErr {
-	req := r.Context().Value("request").(*Log)
+func NewError(internal, external string, code int, err error) *APIErr {
 	a := &APIErr{
 		Internal: Internal{
 			Msg: internal,
@@ -161,7 +173,7 @@ func NewError(r *http.Request, internal, external string, code int, err error) *
 	if err != nil {
 		a.ErrText = err.Error()
 	}
-	req.APIError = a
+
 	return a
 }
 
