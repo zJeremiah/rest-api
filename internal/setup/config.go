@@ -1,24 +1,26 @@
 package setup
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"path"
 
 	"github.com/go-chi/chi/v5"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/rest-api/internal/logger"
 )
 
+// endpoint groups are sorted by these methods
+//  for api documentation
 const (
 	GET Method = iota
-	HEAD
-	OPTIONS
-	PATCH
 	POST
 	PUT
 	DELETE
+	HEAD
+	OPTIONS
+	PATCH
 )
 
 const ContentJSON = "application/json"
@@ -39,9 +41,9 @@ type Endpoint struct {
 	ResponseType string      // This is the ContentType that will be returned in the response (normally application/json)
 	RequestBody  interface{} // This is used to generate the api docs JSON object string for the request
 	ResponseBody interface{} // This is used to generate the api docs JSON object string for the response
-	HandlerFunc  Handler     // the Handler function is called when the router matches the endpoint path
-	RespFunc     Response    // a Response function is called to create an example of the endpoint response body (as json)
-	ReqFunc      Request     // a Request function is called to produce an example of the endpoint request body (as json)
+	HandlerFunc  Handler     `json:"-"` // the Handler function is called when the router matches the endpoint path
+	RespFunc     Response    `json:"-"` // a Response function is called to create an example of the endpoint response body (as json)
+	ReqFunc      Request     `json:"-"` // a Request function is called to produce an example of the endpoint request body (as json)
 	Description  string      // The description of the endpoint for api docs
 	Pretty       bool        // output the json string as pretty format when true
 	QueryParams  []Param     // (api docs) listed query params
@@ -188,18 +190,17 @@ func AddRoutes() {
 	}
 
 	// add the endpoints to the chi mux router
-	for ke, e := range apiConfig.Routes {
-		path := ke
+	for _, e := range apiConfig.Routes {
 		// drop any trailing forward slashes on the path
-		if path[len(path)-1:] == "/" && len(path) > 1 {
-			path = path[:len(path)-1]
+		if e.FullPath[len(e.FullPath)-1:] == "/" && len(e.FullPath) > 1 {
+			e.FullPath = e.FullPath[:len(e.FullPath)-1]
 		}
 
 		if apiConfig.Debug {
-			log.Printf("adding route %4s  path: %s", e.Method, path)
+			log.Printf("adding route %4s  path: %s", e.Method, e.FullPath)
 		}
 
-		apiConfig.mux.Method(e.Method.String(), path, e.HandlerFunc)
+		apiConfig.mux.Method(e.Method.String(), e.FullPath, e.HandlerFunc)
 	}
 }
 
@@ -222,12 +223,12 @@ func (c *Config) ParseReqBody(next http.Handler) http.Handler {
 func AddEndpoints(ep ...Endpoint) error {
 	for _, e := range ep {
 		e.FullPath = path.Clean("/" + e.Version + "/" + e.Group + e.Path)
-		_, found := apiConfig.Routes[e.FullPath]
+		_, found := apiConfig.Routes[e.Method.String()+" "+e.FullPath]
 		if found {
 			log.Fatalf("duplicate endpoint (%s) %s", e.FullPath, e.Description)
 		}
 
-		apiConfig.Routes[e.FullPath] = e
+		apiConfig.Routes[e.Method.String()+" "+e.FullPath] = e
 	}
 
 	return nil
@@ -244,4 +245,22 @@ func GetRoute(name string) (e Endpoint, found bool) {
 		}
 	}
 	return e, false
+}
+
+var json = jsoniter.ConfigFastest
+
+func (ep Endpoint) MarshalResp() string {
+	b, err := json.MarshalIndent(ep.ResponseBody, "", " ")
+	if err != nil {
+		log.Fatalf("could not marshal_resp %s", err.Error())
+	}
+	return string(b)
+}
+
+func (ep Endpoint) MarshalReq() string {
+	b, err := json.MarshalIndent(ep.RequestBody, "", " ")
+	if err != nil {
+		log.Fatalf("could not marshal_resp %s", err.Error())
+	}
+	return string(b)
 }

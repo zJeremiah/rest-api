@@ -19,7 +19,9 @@ func Setup() {
 // build the endpoint and then add the endpoint to the setup endpoints
 func Route() setup.Endpoint {
 	return setup.Endpoint{
+		Name:         "Root Path",
 		Path:         "/",
+		Description:  "The root path returns the api name and version.",
 		Method:       setup.GET,
 		ResponseType: setup.ContentJSON,
 		HandlerFunc:  Handler,

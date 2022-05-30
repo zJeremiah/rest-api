@@ -1,7 +1,7 @@
 version: "3.3"
 services:
   slate:
-    command: build # serve
+    command: serve #build # serve
     image: slatedocs/slate
     container_name: slate
     volumes:

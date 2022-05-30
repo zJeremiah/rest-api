@@ -52,6 +52,14 @@ func main() {
 
 	c.Log.Pretty = c.PrettyLog
 
+	if c.BuildDocs {
+		err := docs.ParseTemplate()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+		return
+	}
+
 	log.Printf("running api on port %d", c.Port)
 	http.ListenAndServe(fmt.Sprintf(":%d", c.Port), setup.Mux())
 }

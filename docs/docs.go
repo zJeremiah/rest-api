@@ -1,64 +1,79 @@
 package docs
 
 import (
+	"fmt"
+	"io/ioutil"
 	"net/http"
-	"path"
+	"os"
 	"strings"
 	"text/template"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rest-api/internal/logger"
 	"github.com/rest-api/internal/setup"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 type EP struct {
 	setup.Endpoint
-	FullPath    string
-	JsonResp    string // json string of the response body
-	JsonReq     string // json string ofthe request body
-	QueryParams []Param
-	URLParams   []Param
-}
-
-type Param struct {
-	Name        string
-	Default     string
-	Descritpion string
 }
 
 type Group struct {
 	Name   string
-	EPList []EP
+	EPList []setup.Endpoint
 }
 
-func ParseTemplate() {
-	t := template.New("api-docs")   // Create a template.
-	t.ParseFiles("index.html.tmpl") // Parse template file.
+type Key struct {
+	Group   string
+	Version string
 }
 
-func EPGroups() map[string][]EP {
-	groups := make(map[string][]EP)
-	// first organize the endpoints into groups
-	for route, ep := range setup.EndpointsList() {
-		g := path.Clean(ep.Version + "/" + ep.Group)
-
-		epDoc := EP{
-			Endpoint: ep,
-			FullPath: route,
-		}
-
-		if ep.RespFunc != nil {
-			epDoc.JsonResp = epDoc.RespFunc()
-		}
-
-		if ep.ReqFunc != nil {
-			epDoc.JsonReq = epDoc.ReqFunc()
-		}
-
-		groups[g] = append(groups[g], epDoc)
+func ParseTemplate() error {
+	b, err := ioutil.ReadFile("./docs/source/index.html.tmpl")
+	if err != nil {
+		return fmt.Errorf("could not read index.html.tmpl file %w", err)
 	}
 
-	return groups
+	t := template.Must(template.New("api-docs").Parse(string(b))) // Parse template file.
+
+	f, err := os.Create("./docs/source/index.html.md")
+	if err != nil {
+		return fmt.Errorf("could not create index.html.md file %w", err)
+	}
+	epg := EPGroups()
+	err = t.Execute(f, epg)
+	if err != nil {
+		return fmt.Errorf("could not execute template  %w", err)
+	}
+	f.Close()
+	return nil
+}
+
+func EPGroups() map[Key]Group {
+	gs := make(map[Key]Group)
+	// first organize the endpoints into groups
+	for _, ep := range setup.EndpointsList() {
+		k := Key{Group: ep.Group, Version: ep.Version}
+		gs[k] = Group{}
+	}
+
+	// add endpoints to the correct groups
+	for g, v := range gs {
+		for _, ep := range setup.EndpointsList() {
+			if g.Group == ep.Group && g.Version == ep.Version {
+				v.EPList = append(v.EPList, ep)
+			}
+		}
+		caser := cases.Title(language.English, cases.Compact)
+		v.Name = caser.String(g.Group + " " + g.Version)
+		if g.Group == "" && g.Version == "" {
+			v.Name = "Domain"
+		}
+		gs[g] = v
+	}
+
+	return gs
 }
 
 // FileServer conveniently sets up a http.FileServer handler to serve

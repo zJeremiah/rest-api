@@ -1,7 +1,8 @@
 param(
   [Parameter()]
   [switch]$test = $false,
-  [switch]$run = $false
+  [switch]$run = $false,
+  [switch]$docs = $false
 )
 
 $build = $true
@@ -26,6 +27,10 @@ if ( $test ) {
 if ( $build ) {
   Write-Host "go build -ldflags '$GOFLAGS' -o $BLDDIR/rest-api.exe"
   go build -ldflags "$GOFLAGS" -o $BLDDIR/rest-api.exe
+}
+
+if ( $docs ) {
+  .\deploy\bin\rest-api.exe -docs
 }
 
 if ( $run ) {
