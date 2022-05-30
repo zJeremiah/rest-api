@@ -1,49 +1,83 @@
 {{template "intro"}}
 {{template "auth"}}
-
-{{range $eps := .}}
-# {{$eps.Name}}
-{{template "group" $eps.EPList}}
-{{end}}
-
+{{template "group" .}}
 {{- template "errors" -}}
 
 
-
 {{define "group"}}
-{{range $ep := .}}
+{{range $group := .}}
+# {{$group.Name}}
+{{range $ep := $group.EPList -}}
 ## {{$ep.Name}}
 
 ```shell
-curl "http://example.com{{$ep.FullPath}}" \
-  -H "Authorization: Bearer {token}"
+curl {{if ne $ep.Method.String "GET"}}-X {{$ep.Method.String}} {{end -}}
+"http://example.com{{$ep.FullPath}}" {{if ne $group.Name "Domain" -}}\
+  -H "Authorization: Bearer {token}" {{if ne $ep.MarshalReq "null" }}\
+  --header 'Content-Type: application/json' --raw-data '{{$ep.MarshalReq}}'{{end}}
+{{- end}}
 ```
 
+{{if ne $ep.MarshalReq "null"}}
+> The body of the request should be JSON and structured like this:
+
+```json
+{{$ep.MarshalReq}}
+```
+{{end -}}
+
+
+{{if ne $ep.MarshalResp "null"}}
 > The above command returns JSON structured like this:
 
 ```json
 {{$ep.MarshalResp}}
 ```
+{{end -}}
 
 {{$ep.Description}}
 
 ### HTTP Request
 
-`{{$ep.Method}} http://example.com/{{$ep.FullPath}}`
+`{{$ep.Method}} http://example.com{{$ep.FullPath}}`
 
+{{- $qp := len $ep.QueryParams -}}
+{{- $up := len $ep.URLParams -}}
+{{- $jf := len $ep.JSONFields -}}
+
+{{- if gt $jf 0 }}
+{{template "json-fields" $ep}}
+{{end}}
+
+{{- if gt $qp 0 }}
 {{template "query-params" $ep}}
+{{end}}
 
+{{- if gt $up 0 }}
 {{template "url-params" $ep}}
 {{end}}
+
+{{end}}
+{{end}}
 {{end}}
 
+
+{{define "json-fields"}}
+### JSON Fields for Request Body
+
+| Field Name   | Required | Description                                                          |
+| ------------ | -------- | -------------------------------------------------------------------- |
+{{range .JSONFields}}| {{.Name}} | {{- if eq .Required ""}}false{{else}}{{.Required}}{{end}} | {{.Description}} |
+{{end}}
+
+{{end}}
 
 {{define "query-params"}}
 ### Query Parameters
 
-| Parameter    | Description                                                                      |
-| ------------ | -------------------------------------------------------------------------------- |
-{{range .QueryParams}}| {{.Name}} |  {{.Description}} |
+| Parameter    | Required | Description                                                          |
+| ------------ | -------- | -------------------------------------------------------------------- |
+{{range .QueryParams}}| {{.Name}} | {{- if eq .Required ""}}false{{else}}{{.Required}}{{end}} | {{.Description}} |
 {{end}}
 
 {{end}}
@@ -53,7 +87,7 @@ curl "http://example.com{{$ep.FullPath}}" \
 
 | Parameter    | Description                                                                      |
 | ------------ | -------------------------------------------------------------------------------- |
-{{range .QueryParams}}| {{.Name}} |  {{.Description}} |
+{{range .URLParams}}| {{.Name}} |  {{.Description}} |
 {{end}}
 
 {{end}}
@@ -68,7 +102,7 @@ Error Code | Meaning
 400 | Bad Request -- Your request is invalid.
 401 | Unauthorized -- Your API key is wrong.
 403 | Forbidden -- Unauthorized
-404 | Not Found -- The specified kitten could not be found.
+404 | Not Found -- The specified kittn could not be found.
 405 | Method Not Allowed -- You tried to access an endpoint with an invalid method.
 406 | Not Acceptable -- You requested a format that isn't json.
 410 | Gone -- The resource requested has been removed from our servers.
@@ -81,9 +115,9 @@ Error Code | Meaning
 {{define "intro"}}
 # Introduction
 
-Welcome to the Kittn API! You can use our API to access Kittn API endpoints, which can get information on various cats, kittens, and breeds in our database.
+Welcome to the Kittn API! You can use our API to access Kittn API endpoints, which can get information on various cats, kittns, and breeds in our database.
 
-We have language bindings in Shell, Ruby, Python, and JavaScript! You can view code examples in the dark area to the right, and you can switch the programming language of the examples with the tabs in the top right.
+We have language bindings in Shell. You can view code examples in the dark area to the right.
 
 This example API documentation page was created with [Slate](https://github.com/slatedocs/slate). Feel free to edit it and use it as a base for your own API's documentation.
 {{end}}

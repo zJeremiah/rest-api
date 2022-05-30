@@ -52,14 +52,16 @@ func main() {
 
 	c.Log.Pretty = c.PrettyLog
 
+	// app will only build the markdown file for building api docs
 	if c.BuildDocs {
+		// build the api docs md file on run
 		err := docs.ParseTemplate()
 		if err != nil {
 			log.Fatal(err.Error())
 		}
 		return
 	}
-
+	log.Println("api documentation at /docs")
 	log.Printf("running api on port %d", c.Port)
 	http.ListenAndServe(fmt.Sprintf(":%d", c.Port), setup.Mux())
 }

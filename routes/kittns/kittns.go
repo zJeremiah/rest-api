@@ -37,7 +37,7 @@ func Setup() {
 
 func GetKittensEP() setup.Endpoint {
 	e := setup.Endpoint{
-		Name:         "Get All Kittens",
+		Name:         "Get All Kittns",
 		Version:      "v1",
 		Group:        "kittns",
 		Path:         "/",
@@ -73,7 +73,7 @@ func GetKittens(w http.ResponseWriter, r *http.Request) error {
 
 func KittenEP() setup.Endpoint {
 	e := setup.Endpoint{
-		Name:         "Get a Specific Kitten",
+		Name:         "Get a Specific Kittn",
 		Version:      "v1",
 		Group:        "kittns",
 		Path:         "/{id}",
@@ -120,7 +120,7 @@ func GetKitten(w http.ResponseWriter, r *http.Request) error {
 
 func RMKittenEP() setup.Endpoint {
 	e := setup.Endpoint{
-		Name:         "Delete a Specific Kitten",
+		Name:         "Delete a Specific Kittn",
 		Version:      "v1",
 		Group:        "kittns",
 		Path:         "/{id}",
@@ -167,8 +167,14 @@ func AddKittnEP() setup.Endpoint {
 			Cute:   3,
 		},
 		ResponseType: setup.ContentJSON,
-		Description:  "This endpoint deletes a specific kittn",
+		Description:  "This endpoint adds a new kittn",
 		HandlerFunc:  AddKittn,
+		JSONFields: []setup.Param{
+			{Name: "name", Required: "true", Description: "the kittn's name"},
+			{Name: "breed", Required: "true", Description: "the kittn's breed"},
+			{Name: "fluffiness", Description: "the fluffiness factor"},
+			{Name: "cuteness", Description: "the cuteness factor"},
+		},
 	}
 
 	return e

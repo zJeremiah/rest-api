@@ -31,7 +31,6 @@ type Method uint
 // this is used to make the correct request to the handler
 // and also used to generate the slate api docs
 type Endpoint struct {
-	Name         string      // a simple name for the endpoint (key value)
 	Version      string      // the version pathing v1, v2, etc...
 	Group        string      // the name of the group path, is part of the path /v1/name/{path}
 	Path         string      // the URI path for the just the endpoint must start with a forward slash /
@@ -41,18 +40,20 @@ type Endpoint struct {
 	ResponseType string      // This is the ContentType that will be returned in the response (normally application/json)
 	RequestBody  interface{} // This is used to generate the api docs JSON object string for the request
 	ResponseBody interface{} // This is used to generate the api docs JSON object string for the response
-	HandlerFunc  Handler     `json:"-"` // the Handler function is called when the router matches the endpoint path
-	RespFunc     Response    `json:"-"` // a Response function is called to create an example of the endpoint response body (as json)
-	ReqFunc      Request     `json:"-"` // a Request function is called to produce an example of the endpoint request body (as json)
-	Description  string      // The description of the endpoint for api docs
+	HandlerFunc  Handler     // the Handler function is called when the router matches the endpoint path
 	Pretty       bool        // output the json string as pretty format when true
-	QueryParams  []Param     // (api docs) listed query params
-	URLParams    []Param     // (api docs) listed url's path paramaters i.e., http://mydomain.com/{section}/{id}
+	// These are used to define the api documentation
+	Name        string  // (api docs) a simple statement for the endpoint
+	Description string  // (api docs) The description of the endpoint for api docs
+	QueryParams []Param // (api docs) listed query params
+	URLParams   []Param // (api docs) listed url's path paramaters i.e., http://mydomain.com/{section}/{id}
+	JSONFields  []Param // (api docs) listed JSON fields for POST/PUT request body
 }
 
 type Param struct {
 	Name        string
 	Description string
+	Required    string // a value of yes or no here
 }
 
 type Endpoints map[string]Endpoint
@@ -167,8 +168,12 @@ func validate() error {
 			}
 		}
 		if len(e.URLParams) != urlParams {
-			return fmt.Errorf("params in path do not match url_params %v (%s)",
-				e.URLParams, e.FullPath)
+			return fmt.Errorf("params in path do not match URLParams %v %s (%s)",
+				e.URLParams, e.Method.String(), e.FullPath)
+		}
+		if e.RequestBody != nil && len(e.JSONFields) == 0 {
+			return fmt.Errorf("json request fields need to be defined in JSONFields %s (%s)",
+				e.Method.String(), e.FullPath)
 		}
 	}
 
