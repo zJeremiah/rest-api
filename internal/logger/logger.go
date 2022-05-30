@@ -88,7 +88,7 @@ func (o *Options) WriteRequest(next http.Handler) http.Handler {
 		r = r.WithContext(context.WithValue(r.Context(), RequestKey, req))
 		next.ServeHTTP(rw, r)
 		if req.NoLog {
-			return // return without logging
+			return // return without writing log output
 		}
 		var body []byte
 		req.Latency = time.Since(start).Seconds()
@@ -158,7 +158,7 @@ func FromContext(ctx context.Context) (found bool, a APIErr) {
 }
 
 // NewError with take the http request and set a the api error in the request log
-// the api error is also returned
+// internal messages are logged, external messages are sent back in the response
 func NewError(internal, external string, code int, err error) *APIErr {
 	a := &APIErr{
 		Internal: Internal{

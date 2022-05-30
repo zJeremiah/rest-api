@@ -5,16 +5,17 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/hydronica/go-config"
+	"github.com/rest-api/docs"
 	"github.com/rest-api/internal/logger"
 	"github.com/rest-api/internal/setup"
 	"github.com/rest-api/internal/version"
-	"github.com/rest-api/router"
+	"github.com/rest-api/routes"
 )
 
 func main() {
@@ -28,44 +29,47 @@ func main() {
 	c.Log.StdOut(os.Stdout)
 	config.New(c).Version(version.Get()).LoadOrDie()
 
-	setup.InitConfig(c)
-	setup.SetRouter(chi.NewRouter())
-	setup.Router().MethodNotAllowed(func(rw http.ResponseWriter, r *http.Request) {
-		req, ok := r.Context().Value(logger.RequestKey).(*logger.Log)
-		if ok {
-			req.NoLog = true
-		}
-		rw.WriteHeader(http.StatusMethodNotAllowed)
-	})
+	setup.InitConfig(c) // initialize the config
+	routes.InitRoutes() // adds the routes to the setup
 
-	setup.Router().NotFound(func(rw http.ResponseWriter, r *http.Request) {
-		req, ok := r.Context().Value(logger.RequestKey).(*logger.Log)
-		if ok {
-			req.NoLog = true
-		}
-		rw.WriteHeader(http.StatusNotFound)
-	})
+	// custom handler methods to avoid logging
+	setup.Mux().MethodNotAllowed(NotAllowed)
+	setup.Mux().NotFound(NotFound)
 
 	// order matters, middleware is called in the order added
-	setup.Router().Use(middleware.Recoverer)
-	setup.Router().Use(middleware.Timeout(time.Minute))
-	setup.Router().Use(middleware.RequestID)
-	setup.Router().Use(Cors())
-	setup.Router().Use(middleware.StripSlashes)
-	setup.Router().Use(c.Log.WriteRequest)
+	setup.Mux().Use(middleware.Recoverer)
+	setup.Mux().Use(middleware.Timeout(time.Minute))
+	setup.Mux().Use(middleware.RequestID)
+	setup.Mux().Use(Cors())
+	setup.Mux().Use(middleware.StripSlashes)
+	setup.Mux().Use(c.Log.WriteRequest)
 
-	router.InitGroups()
-	setup.Routes()
+	setup.AddRoutes()
 
-	err := setup.Validate()
-	if err != nil {
-		log.Fatalln(err)
-	}
+	workDir, _ := os.Getwd()
+	filesDir := http.Dir(filepath.Join(workDir, "./docs/build"))
+	docs.FileServer(setup.Mux(), "/docs", filesDir)
 
 	c.Log.Pretty = c.PrettyLog
 
 	log.Printf("running api on port %d", c.Port)
-	http.ListenAndServe(fmt.Sprintf(":%d", c.Port), setup.Router())
+	http.ListenAndServe(fmt.Sprintf(":%d", c.Port), setup.Mux())
+}
+
+func NotAllowed(rw http.ResponseWriter, r *http.Request) {
+	req, ok := r.Context().Value(logger.RequestKey).(*logger.Log)
+	if ok {
+		req.NoLog = true
+	}
+	rw.WriteHeader(http.StatusMethodNotAllowed)
+}
+
+func NotFound(rw http.ResponseWriter, r *http.Request) {
+	req, ok := r.Context().Value(logger.RequestKey).(*logger.Log)
+	if ok {
+		req.NoLog = true
+	}
+	rw.WriteHeader(http.StatusNotFound)
 }
 
 // Basic CORS

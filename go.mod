@@ -18,7 +18,7 @@ require (
 	github.com/hydronica/toml v0.4.2 // indirect
 	github.com/iancoleman/strcase v0.1.2 // indirect
 	github.com/jbsmith7741/go-tools v0.4.1 // indirect
-	github.com/jbsmith7741/uri v0.4.1 // indirect
+	github.com/jbsmith7741/uri v0.5.1 // indirect
 	github.com/minio/minio-go v6.0.14+incompatible // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect

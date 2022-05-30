@@ -1,4 +1,4 @@
-# REST API base boiler plate
+# REST API base template
 
 To add endpoints
 
@@ -8,13 +8,11 @@ To add endpoints
   - The request body is only needed on requests that have a request body
   - The path must start with a forward slash '/' paths are build as follows
   - /{version}/{group}/{endpoint.path} (trailing slashes are dropped)
-- Write a HandlerFunc to handle your request
 
 ```go
 func MyRoute() Endpoint {
 	e := Endpoint{
-		Name:         "test error",
-		Path:         "/error",
+		Path:         "/",
 		Method:       GET,
 		ResponseType: ContentJSON,
 		ResponseBody: Home{
@@ -28,17 +26,18 @@ func MyRoute() Endpoint {
 }
 ```
 
-- In the router.go file add a group where you will list your endpoints
+- Write a HandlerFunc to handle your request
 
 ```go
-Group{
-			Name:        "test",
-			Version:     "v2",
-			Description: "v2 test routes",
-			// each endpoint function is listed here to build the group routes
-			Routes: Endpoints{
-				MyRoute(),
-				// ...
-			},
-		})
+// Home is an setup.Endpoint handler func example for the root / path
+func Home(w http.ResponseWriter, r *http.Request) error {
+	Respond(w, struct {
+		AppName string         `json:"app_name"`
+		Version version.Struct `json:"build_info"`
+	}{
+		AppName: "rest-api",
+		Version: version.JSON(),
+	}, true)
+	return nil
+}
 ```
