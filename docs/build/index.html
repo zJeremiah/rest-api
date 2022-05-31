@@ -319,10 +319,13 @@
             <a href="#authentication" class="toc-h1 toc-link" data-title="Authentication">Authentication</a>
           </li>
           <li>
-            <a href="#domain" class="toc-h1 toc-link" data-title="Domain">Domain</a>
+            <a href="#host-domain" class="toc-h1 toc-link" data-title="Host Domain">Host Domain</a>
               <ul class="toc-list-h2">
                   <li>
                     <a href="#root-path" class="toc-h2 toc-link" data-title="Root Path">Root Path</a>
+                  </li>
+                  <li>
+                    <a href="#testing-post-route" class="toc-h2 toc-link" data-title="Testing Post Route">Testing Post Route</a>
                   </li>
               </ul>
           </li>
@@ -330,16 +333,16 @@
             <a href="#kittns-v1" class="toc-h1 toc-link" data-title="Kittns V1">Kittns V1</a>
               <ul class="toc-list-h2">
                   <li>
-                    <a href="#get-all-kittns" class="toc-h2 toc-link" data-title="Get All Kittns">Get All Kittns</a>
-                  </li>
-                  <li>
-                    <a href="#get-a-specific-kittn" class="toc-h2 toc-link" data-title="Get a Specific Kittn">Get a Specific Kittn</a>
-                  </li>
-                  <li>
                     <a href="#delete-a-specific-kittn" class="toc-h2 toc-link" data-title="Delete a Specific Kittn">Delete a Specific Kittn</a>
                   </li>
                   <li>
                     <a href="#add-a-new-kittn" class="toc-h2 toc-link" data-title="Add a New Kittn">Add a New Kittn</a>
+                  </li>
+                  <li>
+                    <a href="#get-all-kittns" class="toc-h2 toc-link" data-title="Get All Kittns">Get All Kittns</a>
+                  </li>
+                  <li>
+                    <a href="#get-a-specific-kittn" class="toc-h2 toc-link" data-title="Get a Specific Kittn">Get a Specific Kittn</a>
                   </li>
               </ul>
           </li>
@@ -382,7 +385,7 @@ curl <span class="s2">"api_endpoint_here"</span> <span class="se">\</span>
 <aside class="notice">
 You must replace <code>meowmeowmeow</code> with your personal API key.
 </aside>
-<h1 id='domain'>Domain</h1><h2 id='root-path'>Root Path</h2><div class="highlight"><pre class="highlight shell tab-shell"><code>curl <span class="s2">"http://example.com/"</span> 
+<h1 id='host-domain'>Host Domain</h1><h2 id='root-path'>Root Path</h2><div class="highlight"><pre class="highlight shell tab-shell"><code>curl <span class="s2">"http://example.com/"</span> 
 </code></pre></div>
 <blockquote>
 <p>The above command returns JSON structured like this:</p>
@@ -391,57 +394,124 @@ You must replace <code>meowmeowmeow</code> with your personal API key.
  </span><span class="nl">"app_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"rest-api"</span><span class="p">,</span><span class="w">
  </span><span class="nl">"build_info"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
   </span><span class="nl">"build"</span><span class="p">:</span><span class="w"> </span><span class="s2">"go1.18.2"</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"7eb3268"</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"build_time"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2022-05-30T14:30:49"</span><span class="w">
+  </span><span class="nl">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"-"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"build_time"</span><span class="p">:</span><span class="w"> </span><span class="s2">"-"</span><span class="w">
  </span><span class="p">}</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div>
 <p>The root path returns the api name and version.</p>
 <h3 id='http-request'>HTTP Request</h3>
 <p><code>GET http://example.com/</code></p>
-<h1 id='kittns-v1'>Kittns V1</h1><h2 id='get-all-kittns'>Get All Kittns</h2><div class="highlight"><pre class="highlight shell tab-shell"><code>curl <span class="s2">"http://example.com/v1/kittns"</span> <span class="se">\</span>
-  <span class="nt">-H</span> <span class="s2">"Authorization: Bearer {token}"</span> 
+<h2 id='testing-post-route'>Testing Post Route</h2><div class="highlight"><pre class="highlight shell tab-shell"><code>curl <span class="nt">-X</span> POST <span class="s2">"http://example.com/testing"</span> <span class="se">\</span>
+  <span class="nt">-H</span> <span class="s2">"Authorization: Bearer {token}"</span><span class="se">\</span>
+  <span class="nt">-H</span> <span class="s1">'Content-Type: application/json'</span><span class="se">\ </span>
+  <span class="nt">--raw-data</span> <span class="s1">'{
+ "id": 123,
+ "name": "Alex Doe",
+ "float": 123.456,
+ "map": {
+  "test2": 432,
+  "test": "value"
+ },
+ "array": [
+  "string value",
+  123.12,
+  {
+   "key": "value"
+  },
+  6575
+ ]
+}'</span>
 </code></pre></div>
 <blockquote>
-<p>The above command returns JSON structured like this:</p>
+<p>The body of the request should be JSON and structured like this:</p>
 </blockquote>
-<div class="highlight"><pre class="highlight json tab-json"><code><span class="p">[</span><span class="w">
- </span><span class="p">{</span><span class="w">
-  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Fluffums"</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"breed"</span><span class="p">:</span><span class="w"> </span><span class="s2">"calico"</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"fluffiness"</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"cuteness"</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="w">
+<div class="highlight"><pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
+ </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">123</span><span class="p">,</span><span class="w">
+ </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Alex Doe"</span><span class="p">,</span><span class="w">
+ </span><span class="nl">"float"</span><span class="p">:</span><span class="w"> </span><span class="mf">123.456</span><span class="p">,</span><span class="w">
+ </span><span class="nl">"map"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+  </span><span class="nl">"test"</span><span class="p">:</span><span class="w"> </span><span class="s2">"value"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"test2"</span><span class="p">:</span><span class="w"> </span><span class="mi">432</span><span class="w">
  </span><span class="p">},</span><span class="w">
- </span><span class="p">{</span><span class="w">
-  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Max"</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"breed"</span><span class="p">:</span><span class="w"> </span><span class="s2">"calico"</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"fluffiness"</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"cuteness"</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="w">
- </span><span class="p">}</span><span class="w">
-</span><span class="p">]</span><span class="w">
+ </span><span class="nl">"array"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+  </span><span class="s2">"string value"</span><span class="p">,</span><span class="w">
+  </span><span class="mf">123.12</span><span class="p">,</span><span class="w">
+  </span><span class="p">{</span><span class="w">
+   </span><span class="nl">"key"</span><span class="p">:</span><span class="w"> </span><span class="s2">"value"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="mi">6575</span><span class="w">
+ </span><span class="p">]</span><span class="w">
+</span><span class="p">}</span><span class="w">
 </span></code></pre></div>
-<p>This endpoint retrieves all kittns</p>
-<h3 id='http-request-2'>HTTP Request</h3>
-<p><code>GET http://example.com/v1/kittns</code></p>
-<h2 id='get-a-specific-kittn'>Get a Specific Kittn</h2><div class="highlight"><pre class="highlight shell tab-shell"><code>curl <span class="s2">"http://example.com/v1/kittns/{id}"</span> <span class="se">\</span>
-  <span class="nt">-H</span> <span class="s2">"Authorization: Bearer {token}"</span> 
-</code></pre></div>
 <blockquote>
 <p>The above command returns JSON structured like this:</p>
 </blockquote>
 <div class="highlight"><pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
- </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
- </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Fluffums"</span><span class="p">,</span><span class="w">
- </span><span class="nl">"breed"</span><span class="p">:</span><span class="w"> </span><span class="s2">"calico"</span><span class="p">,</span><span class="w">
- </span><span class="nl">"fluffiness"</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w">
- </span><span class="nl">"cuteness"</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="w">
+ </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">123</span><span class="p">,</span><span class="w">
+ </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Alex Doe"</span><span class="p">,</span><span class="w">
+ </span><span class="nl">"float"</span><span class="p">:</span><span class="w"> </span><span class="mf">123.456</span><span class="p">,</span><span class="w">
+ </span><span class="nl">"map"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+  </span><span class="nl">"test"</span><span class="p">:</span><span class="w"> </span><span class="s2">"value"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"test2"</span><span class="p">:</span><span class="w"> </span><span class="mi">432</span><span class="w">
+ </span><span class="p">},</span><span class="w">
+ </span><span class="nl">"array"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+  </span><span class="s2">"string value"</span><span class="p">,</span><span class="w">
+  </span><span class="mf">123.12</span><span class="p">,</span><span class="w">
+  </span><span class="p">{</span><span class="w">
+   </span><span class="nl">"key"</span><span class="p">:</span><span class="w"> </span><span class="s2">"value"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="mi">6575</span><span class="w">
+ </span><span class="p">]</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div>
-<p>This endpoint retrieves a specific kittn</p>
+<p>This is for testing post requests</p>
+<h3 id='http-request-2'>HTTP Request</h3>
+<p><code>POST http://example.com/testing</code></p>
+
+<ul>
+<li>Content-Type: <code>application/json</code></li>
+</ul>
+<h3 id='json-fields-for-request-body'>JSON Fields for Request Body</h3>
+<table><thead>
+<tr>
+<th>Field Name</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>id</td>
+<td>false</td>
+<td></td>
+</tr>
+<tr>
+<td>name</td>
+<td>false</td>
+<td></td>
+</tr>
+<tr>
+<td>float</td>
+<td>false</td>
+<td></td>
+</tr>
+<tr>
+<td>map</td>
+<td>false</td>
+<td></td>
+</tr>
+<tr>
+<td>array</td>
+<td>false</td>
+<td></td>
+</tr>
+</tbody></table>
+<h1 id='kittns-v1'>Kittns V1</h1><h2 id='delete-a-specific-kittn'>Delete a Specific Kittn</h2><div class="highlight"><pre class="highlight shell tab-shell"><code>curl <span class="nt">-X</span> DELETE <span class="s2">"http://example.com/v1/kittns/{id}"</span> <span class="se">\</span>
+  <span class="nt">-H</span> <span class="s2">"Authorization: Bearer {token}"</span>
+</code></pre></div>
+<p>This endpoint deletes a specific kittn</p>
 <h3 id='http-request-3'>HTTP Request</h3>
-<p><code>GET http://example.com/v1/kittns/{id}</code></p>
+<p><code>DELETE http://example.com/v1/kittns/{id}</code></p>
 <h3 id='url-parameters'>URL Parameters</h3>
 <table><thead>
 <tr>
@@ -454,27 +524,10 @@ You must replace <code>meowmeowmeow</code> with your personal API key.
 <td>the id for a kittn</td>
 </tr>
 </tbody></table>
-<h2 id='delete-a-specific-kittn'>Delete a Specific Kittn</h2><div class="highlight"><pre class="highlight shell tab-shell"><code>curl <span class="nt">-X</span> DELETE <span class="s2">"http://example.com/v1/kittns/{id}"</span> <span class="se">\</span>
-  <span class="nt">-H</span> <span class="s2">"Authorization: Bearer {token}"</span> 
-</code></pre></div>
-<p>This endpoint deletes a specific kittn</p>
-<h3 id='http-request-4'>HTTP Request</h3>
-<p><code>DELETE http://example.com/v1/kittns/{id}</code></p>
-<h3 id='url-parameters-2'>URL Parameters</h3>
-<table><thead>
-<tr>
-<th>Parameter</th>
-<th>Description</th>
-</tr>
-</thead><tbody>
-<tr>
-<td>id</td>
-<td>the id for a kittn</td>
-</tr>
-</tbody></table>
 <h2 id='add-a-new-kittn'>Add a New Kittn</h2><div class="highlight"><pre class="highlight shell tab-shell"><code>curl <span class="nt">-X</span> POST <span class="s2">"http://example.com/v1/kittns"</span> <span class="se">\</span>
-  <span class="nt">-H</span> <span class="s2">"Authorization: Bearer {token}"</span> <span class="se">\</span>
-  <span class="nt">--header</span> <span class="s1">'Content-Type: application/json'</span> <span class="nt">--raw-data</span> <span class="s1">'{
+  <span class="nt">-H</span> <span class="s2">"Authorization: Bearer {token}"</span><span class="se">\</span>
+  <span class="nt">-H</span> <span class="s1">'Content-Type: application/json'</span><span class="se">\ </span>
+  <span class="nt">--raw-data</span> <span class="s1">'{
  "name": "Stealth",
  "breed": "Siamese",
  "fluffiness": 2,
@@ -503,9 +556,13 @@ You must replace <code>meowmeowmeow</code> with your personal API key.
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div>
 <p>This endpoint adds a new kittn</p>
-<h3 id='http-request-5'>HTTP Request</h3>
+<h3 id='http-request-4'>HTTP Request</h3>
 <p><code>POST http://example.com/v1/kittns</code></p>
-<h3 id='json-fields-for-request-body'>JSON Fields for Request Body</h3>
+
+<ul>
+<li>Content-Type: <code>application/json</code></li>
+</ul>
+<h3 id='json-fields-for-request-body-2'>JSON Fields for Request Body</h3>
 <table><thead>
 <tr>
 <th>Field Name</th>
@@ -532,6 +589,61 @@ You must replace <code>meowmeowmeow</code> with your personal API key.
 <td>cuteness</td>
 <td>false</td>
 <td>the cuteness factor</td>
+</tr>
+</tbody></table>
+<h2 id='get-all-kittns'>Get All Kittns</h2><div class="highlight"><pre class="highlight shell tab-shell"><code>curl <span class="s2">"http://example.com/v1/kittns"</span> <span class="se">\</span>
+  <span class="nt">-H</span> <span class="s2">"Authorization: Bearer {token}"</span>
+</code></pre></div>
+<blockquote>
+<p>The above command returns JSON structured like this:</p>
+</blockquote>
+<div class="highlight"><pre class="highlight json tab-json"><code><span class="p">[</span><span class="w">
+ </span><span class="p">{</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Fluffums"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"breed"</span><span class="p">:</span><span class="w"> </span><span class="s2">"calico"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"fluffiness"</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"cuteness"</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="w">
+ </span><span class="p">},</span><span class="w">
+ </span><span class="p">{</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Max"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"breed"</span><span class="p">:</span><span class="w"> </span><span class="s2">"calico"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"fluffiness"</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"cuteness"</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="w">
+ </span><span class="p">}</span><span class="w">
+</span><span class="p">]</span><span class="w">
+</span></code></pre></div>
+<p>This endpoint retrieves all kittns</p>
+<h3 id='http-request-5'>HTTP Request</h3>
+<p><code>GET http://example.com/v1/kittns</code></p>
+<h2 id='get-a-specific-kittn'>Get a Specific Kittn</h2><div class="highlight"><pre class="highlight shell tab-shell"><code>curl <span class="s2">"http://example.com/v1/kittns/{id}"</span> <span class="se">\</span>
+  <span class="nt">-H</span> <span class="s2">"Authorization: Bearer {token}"</span>
+</code></pre></div>
+<blockquote>
+<p>The above command returns JSON structured like this:</p>
+</blockquote>
+<div class="highlight"><pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
+ </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+ </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Fluffums"</span><span class="p">,</span><span class="w">
+ </span><span class="nl">"breed"</span><span class="p">:</span><span class="w"> </span><span class="s2">"calico"</span><span class="p">,</span><span class="w">
+ </span><span class="nl">"fluffiness"</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w">
+ </span><span class="nl">"cuteness"</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div>
+<p>This endpoint retrieves a specific kittn</p>
+<h3 id='http-request-6'>HTTP Request</h3>
+<p><code>GET http://example.com/v1/kittns/{id}</code></p>
+<h3 id='url-parameters-2'>URL Parameters</h3>
+<table><thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>id</td>
+<td>the id for a kittn</td>
 </tr>
 </tbody></table>
 <h1 id='errors'>Errors</h1>

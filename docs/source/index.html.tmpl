@@ -31,10 +31,10 @@ meta:
 
 ```shell
 curl {{if ne $ep.Method.String "GET"}}-X {{$ep.Method.String}} {{end -}}
-"http://example.com{{$ep.FullPath}}" {{if ne $group.Name "Domain" -}}\
-  -H "Authorization: Bearer {token}" {{if ne $ep.MarshalReq "null" }}\
-  --header 'Content-Type: application/json' --raw-data '{{$ep.MarshalReq}}'{{end}}
-{{- end}}
+"http://example.com{{$ep.FullPath}}" {{if ne $ep.FullPath "/"}}\
+  -H "Authorization: Bearer {token}"{{end}}{{if ne $ep.RequestType ""}}\
+  -H 'Content-Type: application/json'{{end}}{{if ne $ep.MarshalReq "null"}}\ 
+  --raw-data '{{$ep.MarshalReq}}'{{end}}
 ```
 
 {{if ne $ep.MarshalReq "null"}}
@@ -59,6 +59,9 @@ curl {{if ne $ep.Method.String "GET"}}-X {{$ep.Method.String}} {{end -}}
 ### HTTP Request
 
 `{{$ep.Method}} http://example.com{{$ep.FullPath}}`
+{{if ne $ep.RequestType ""}}
+- Content-Type: `{{$ep.RequestType}}`
+{{end}}
 
 {{- $qp := len $ep.QueryParams -}}
 {{- $up := len $ep.URLParams -}}

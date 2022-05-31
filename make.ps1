@@ -30,7 +30,8 @@ if ( $build ) {
 }
 
 if ( $docs ) {
-  .\deploy\bin\rest-api.exe -docs
+  Write-Host "rebuilding index.html.md"
+  go run ./... -docs
   docker-compose -f ".\docs\docker-compose.yml" up
 }
 

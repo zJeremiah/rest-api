@@ -64,7 +64,7 @@ func EPGroups() map[Key]Group {
 		caser := cases.Title(language.English, cases.Compact)
 		v.Name = caser.String(g.Group + " " + g.Version)
 		if g.Group == "" && g.Version == "" {
-			v.Name = "Domain"
+			v.Name = "Host Domain"
 		}
 		gs[g] = v
 	}
