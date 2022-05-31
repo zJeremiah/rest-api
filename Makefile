@@ -14,7 +14,7 @@ build: clean
 # build the markdown file for slate to build the api documentation
 docs: build
 	@go run ./... -docs
-	docker-compose -f ".\docs\docker-compose.yml" up
+	docker-compose -f "./docs/docker-compose.yml" up
 
 clean: # clean up build directory
 	rm -rf $(BLDDIR)

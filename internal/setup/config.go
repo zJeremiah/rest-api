@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"path"
+	"path/filepath"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	jsoniter "github.com/json-iterator/go"
@@ -180,6 +183,20 @@ func validate() error {
 	return nil
 }
 
+func Docs(w http.ResponseWriter, r *http.Request) {
+	req, ok := r.Context().Value(logger.RequestKey).(*logger.Log)
+	if ok {
+		req.NoLog = true
+	}
+
+	workDir, _ := os.Getwd()
+	root := http.Dir(filepath.Join(workDir, "docs/build"))
+	rctx := chi.RouteContext(r.Context())
+	prefix := strings.TrimSuffix(rctx.RoutePattern(), "/*")
+	fs := http.StripPrefix(prefix, http.FileServer(root))
+	fs.ServeHTTP(w, r)
+}
+
 // addRoutes will take each endpoint and build all path routes
 //  endpoints, setting the handler func, path and method
 // This must happen after all middleware has been initialized
@@ -193,6 +210,10 @@ func AddRoutes() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	// api documentation file serving
+	apiConfig.mux.Get("/docs", Docs)
+	apiConfig.mux.Get("/docs/*", Docs)
 
 	// add the endpoints to the chi mux router
 	for _, e := range apiConfig.Routes {

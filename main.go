@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -45,10 +44,6 @@ func main() {
 	setup.Mux().Use(c.Log.WriteRequest)
 
 	setup.AddRoutes()
-
-	workDir, _ := os.Getwd()
-	filesDir := http.Dir(filepath.Join(workDir, "./docs/build"))
-	docs.FileServer(setup.Mux(), "/docs", filesDir)
 
 	c.Log.Pretty = c.PrettyLog
 

@@ -3,13 +3,9 @@ package docs
 import (
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
-	"strings"
 	"text/template"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/rest-api/internal/logger"
 	"github.com/rest-api/internal/setup"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -74,19 +70,4 @@ func EPGroups() map[Key]Group {
 	}
 
 	return gs
-}
-
-// FileServer conveniently sets up a http.FileServer handler to serve
-// static files from a http.FileSystem.
-func FileServer(r chi.Router, path string, root http.FileSystem) {
-	r.Get(path, func(w http.ResponseWriter, r *http.Request) {
-		req, ok := r.Context().Value(logger.RequestKey).(*logger.Log)
-		if ok {
-			req.NoLog = true
-		}
-		rctx := chi.RouteContext(r.Context())
-		pathPrefix := strings.TrimSuffix(rctx.RoutePattern(), "/*")
-		fs := http.StripPrefix(pathPrefix, http.FileServer(root))
-		fs.ServeHTTP(w, r)
-	})
 }
