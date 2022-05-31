@@ -86,5 +86,7 @@ func Home(w http.ResponseWriter, r *http.Request) error {
 - run `make docs` for linux and `.\make.ps1 -docs` for windows
   - powershell is required on windows to run the windows script
   - docker compose is required to run the slate build
+- run `make` for mac/linux and `.\make.ps1` on windows
+  - this will build the binary
 - after the docs are built, running the api will serve the docs
   - http://localhost:9876/docs
