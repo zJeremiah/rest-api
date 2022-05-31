@@ -9,4 +9,5 @@ import (
 func InitRoutes() {
 	root.Setup()
 	kittns.Setup()
+	// ... add setup functions here
 }
