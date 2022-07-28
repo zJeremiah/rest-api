@@ -41,7 +41,7 @@ func GetKittensEP() setup.Endpoint {
 		Version:      "v1",
 		Group:        "kittns",
 		Path:         "/",
-		Method:       setup.GET,
+		Methods:      setup.Methods{setup.GET},
 		ResponseType: setup.ContentJSON,
 		ResponseBody: []Kitten{ // these are example values to be used in the api docs
 			{ID: 1, Name: "Fluffums", Breed: "calico", Fluffy: 6, Cute: 7},
@@ -77,7 +77,7 @@ func KittenEP() setup.Endpoint {
 		Version:      "v1",
 		Group:        "kittns",
 		Path:         "/{id}",
-		Method:       setup.GET,
+		Methods:      setup.Methods{setup.GET},
 		ResponseType: setup.ContentJSON,
 		ResponseBody: Kitten{ID: 1, Name: "Fluffums", Breed: "calico", Fluffy: 6, Cute: 7}, // example for docs
 		Description:  "This endpoint retrieves a specific kittn",
@@ -124,7 +124,7 @@ func RMKittenEP() setup.Endpoint {
 		Version:      "v1",
 		Group:        "kittns",
 		Path:         "/{id}",
-		Method:       setup.DELETE,
+		Methods:      setup.Methods{setup.DELETE},
 		ResponseType: setup.ContentJSON,
 		Description:  "This endpoint deletes a specific kittn",
 		HandlerFunc:  RMKitten,
@@ -151,7 +151,7 @@ func AddKittnEP() setup.Endpoint {
 		Version:     "v1",
 		Group:       "kittns",
 		Path:        "/",
-		Method:      setup.POST,
+		Methods:     setup.Methods{setup.POST},
 		RequestType: setup.ContentJSON,
 		RequestBody: Kitten{
 			Name:   "Stealth",

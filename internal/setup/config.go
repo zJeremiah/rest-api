@@ -4,10 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"path"
-	"path/filepath"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
 	jsoniter "github.com/json-iterator/go"
@@ -17,18 +14,22 @@ import (
 // endpoint groups are sorted by these methods
 //  for api documentation
 const (
-	GET Method = iota
+	GET Method = iota + 1
+	HEAD
 	POST
 	PUT
-	DELETE
-	HEAD
-	OPTIONS
 	PATCH
+	DELETE
+	CONNECT
+	OPTIONS
+	TRACE
+	ANY
 )
 
 const ContentJSON = "application/json"
 
 type Method uint
+type Methods []Method
 
 // Endpoint object is used to setup an api endpoint in the api
 // this is used to make the correct request to the handler
@@ -38,13 +39,14 @@ type Endpoint struct {
 	Group        string      // the name of the group path, is part of the path /v1/name/{path}
 	Path         string      // the URI path for the just the endpoint must start with a forward slash /
 	FullPath     string      // (auto built) the full uri path for the endpoint /{version}/{group}/{path}
-	Method       Method      // the HTTP method for the endpoint GET, POST etc...
+	Methods      Methods     // the HTTP methods to use for the endpoint GET, POST etc...
 	RequestType  string      // The request type is the ContentType for the request
 	ResponseType string      // This is the ContentType that will be returned in the response (normally application/json)
 	RequestBody  interface{} // This is used to generate the api docs JSON object string for the request
 	ResponseBody interface{} // This is used to generate the api docs JSON object string for the response
 	HandlerFunc  Handler     // the Handler function is called when the router matches the endpoint path
 	Pretty       bool        // output the json string as pretty format when true
+
 	// These are used to define the api documentation
 	Name        string  // (api docs) a simple statement for the endpoint
 	Description string  // (api docs) The description of the endpoint for api docs
@@ -72,6 +74,7 @@ type Config struct {
 	Port      int             `toml:"port" json:"port" flag:"port" comment:"http port number"`
 	Debug     bool            `toml:"debug" json:"debug" flag:"debug" comment:"show debug logging"`
 	Log       *logger.Options `toml:"log_options" json:"log_options"`
+	ColorLog  bool            `flag:"color" toml:"color" json:"color" comment:"use linux coloring for request logs"`
 	PrettyLog bool            `flag:"pretty" comment:"will pretty print request logs"`
 	BuildDocs bool            `flag:"docs" comment:"flag to build the docs md file for slate"`
 	mux       *chi.Mux
@@ -80,22 +83,34 @@ type Config struct {
 
 var apiConfig *Config
 
+func (ms Methods) First() (m Method) {
+	if len(ms) > 0 {
+		m = ms[0]
+	}
+	return m
+}
+
 func (rm Method) String() string {
 	switch rm {
 	case GET:
 		return "GET"
-	case POST:
-		return "POST"
 	case HEAD:
 		return "HEAD"
+	case POST:
+		return "POST"
 	case PUT:
 		return "PUT"
-	case DELETE:
-		return "DELETE"
 	case PATCH:
 		return "PATCH"
+	case DELETE:
+		return "DELETE"
+	case CONNECT:
+		return "CONNECT"
 	case OPTIONS:
 		return "OPTIONS"
+	case TRACE:
+		return "TRACE"
+
 	default:
 		return ""
 	}
@@ -136,9 +151,10 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				},
 			}
 		}
+
+		a.Status = http.StatusText(a.Code)
 		respBody, _ = json.Marshal(a.RespBody)
 		req.APIError = &a.Internal
-		a.Status = http.StatusText(a.Code)
 
 		w.Header().Set("Content-Type", ContentJSON)
 		w.WriteHeader(a.Code)
@@ -151,8 +167,8 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func validate() error {
 	for _, e := range apiConfig.Routes {
 		if len(e.Path) == 0 || e.Path[:1] != "/" {
-			return fmt.Errorf("the path must start with a forward slash / %s %s (%s)",
-				e.Name, e.Method.String(), e.Path)
+			return fmt.Errorf("the path must start with a forward slash / %s %v (%s)",
+				e.Name, e.Methods, e.Path)
 		}
 
 		urlParams := 0
@@ -163,38 +179,24 @@ func validate() error {
 			}
 			if c == '}' {
 				if !pStart {
-					return fmt.Errorf("mis-matched url params %s %s (%s)",
-						e.Name, e.Method.String(), e.Path)
+					return fmt.Errorf("mis-matched url params %s %v (%s)",
+						e.Name, e.Methods, e.Path)
 				}
 				pStart = false
 				urlParams++
 			}
 		}
 		if len(e.URLParams) != urlParams {
-			return fmt.Errorf("params in path do not match URLParams %v %s (%s)",
-				e.URLParams, e.Method.String(), e.FullPath)
+			return fmt.Errorf("params in path do not match URLParams %v %v (%s)",
+				e.URLParams, e.Methods, e.FullPath)
 		}
 		if e.RequestBody != nil && len(e.JSONFields) == 0 {
-			return fmt.Errorf("json request fields need to be defined in JSONFields %s (%s)",
-				e.Method.String(), e.FullPath)
+			return fmt.Errorf("json request fields need to be defined in JSONFields %v (%s)",
+				e.Methods, e.FullPath)
 		}
 	}
 
 	return nil
-}
-
-func Docs(w http.ResponseWriter, r *http.Request) {
-	req, ok := r.Context().Value(logger.RequestKey).(*logger.Log)
-	if ok {
-		req.NoLog = true
-	}
-
-	workDir, _ := os.Getwd()
-	root := http.Dir(filepath.Join(workDir, "docs/build"))
-	rctx := chi.RouteContext(r.Context())
-	prefix := strings.TrimSuffix(rctx.RoutePattern(), "/*")
-	fs := http.StripPrefix(prefix, http.FileServer(root))
-	fs.ServeHTTP(w, r)
 }
 
 // addRoutes will take each endpoint and build all path routes
@@ -216,17 +218,37 @@ func AddRoutes() {
 	apiConfig.mux.Get("/docs/*", Docs)
 
 	// add the endpoints to the chi mux router
-	for _, e := range apiConfig.Routes {
+	for x, e := range apiConfig.Routes {
 		// drop any trailing forward slashes on the path
 		if e.FullPath[len(e.FullPath)-1:] == "/" && len(e.FullPath) > 1 {
 			e.FullPath = e.FullPath[:len(e.FullPath)-1]
 		}
 
-		if apiConfig.Debug {
-			log.Printf("adding route %4s  path: %s", e.Method, e.FullPath)
+		any := false
+		for _, m := range e.Methods {
+			if m == ANY {
+				any = true
+				e.Methods = make(Methods, 0)
+				for i := 1; i < 10; i++ {
+					method := Method(i).String()
+					if method != "HEAD" && method != "DELETE" {
+						e.Methods = append(e.Methods, Method(i))
+						apiConfig.mux.Method(method, e.FullPath, e.HandlerFunc)
+					}
+				}
+				apiConfig.Routes[x] = e
+				break
+			}
+		}
+		if !any {
+			for _, m := range e.Methods {
+				apiConfig.mux.Method(m.String(), e.FullPath, e.HandlerFunc)
+			}
 		}
 
-		apiConfig.mux.Method(e.Method.String(), e.FullPath, e.HandlerFunc)
+		if apiConfig.Debug {
+			log.Printf("adding route %v path: %s", e.Methods, e.FullPath)
+		}
 	}
 }
 
@@ -235,26 +257,19 @@ func Mux() *chi.Mux {
 	return apiConfig.mux
 }
 
-// Testing the possibility of auto unmarshaling the request body if needed
-func (c *Config) ParseReqBody(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		//r = r.WithContext(context.WithValue(r.Context(), Key("request_body"), req))
-		next.ServeHTTP(rw, r)
-	})
-}
-
 // AddEndpoint will add the endpoint list by {version}/{group}
 // a full route is determined by {domain}/{version}/{group}/{endpoint.path}
 // an error is returned if the endpoint has already been created
 func AddEndpoints(ep ...Endpoint) error {
 	for _, e := range ep {
 		e.FullPath = path.Clean("/" + e.Version + "/" + e.Group + e.Path)
-		_, found := apiConfig.Routes[e.Method.String()+" "+e.FullPath]
+		id := fmt.Sprintf("%v %s", e.Methods, e.FullPath)
+		_, found := apiConfig.Routes[id]
 		if found {
 			log.Fatalf("duplicate endpoint (%s) %s", e.FullPath, e.Description)
 		}
 
-		apiConfig.Routes[e.Method.String()+" "+e.FullPath] = e
+		apiConfig.Routes[id] = e
 	}
 
 	return nil

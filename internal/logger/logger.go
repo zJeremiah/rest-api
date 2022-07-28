@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -16,11 +17,15 @@ import (
 // File log options
 type Options struct {
 	stdOut io.Writer
+	writer io.Writer
+
 	//writer        file.Writer
 	Rotation      string `toml:"rotation" json:"rotation"`
 	FilePath      string `toml:"file_path" json:"file_path"`
 	*file.Options `toml:"file_options" json:"file_options"`
-	Pretty        bool `toml:"pretty" json:"pretty"`
+	Pretty        bool `toml:"-" json:"-"`
+	Color         bool `toml:"-" json:"-"`
+	Debug         bool `toml:"-" json:"-"`
 }
 
 // Request represents an external request to the api
@@ -32,7 +37,7 @@ type APIErr struct {
 type RespBody struct {
 	Msg    string `json:"message,omitempty"`
 	Code   int    `json:"code,omitempty"`
-	Status string `json:"status,omitempty"`
+	Status string `json:"status,omitempty"` // you don't set the status value, that is derived from the status code
 }
 
 type Internal struct {
@@ -63,8 +68,21 @@ const RequestKey ctxRequestKey = 0
 
 var json = jsoniter.ConfigFastest
 
-func (o *Options) StdOut(wc io.WriteCloser) {
-	o.stdOut = wc
+func (o *Options) InitLogger() {
+	if o.FilePath == "" {
+		o.FilePath = "nop://"
+	}
+	w, err := file.NewWriter(o.FilePath, o.Options)
+	if err != nil {
+		log.Fatalf("could not create request log writer %+v", err)
+	}
+	o.writer = w
+
+	if o.Debug {
+		o.stdOut = os.Stdout
+	} else {
+		o.stdOut, _ = file.NewWriter("nop://", o.Options)
+	}
 }
 
 func (o *Options) WriteRequest(next http.Handler) http.Handler {
@@ -104,11 +122,23 @@ func (o *Options) WriteRequest(next http.Handler) http.Handler {
 			}
 		}
 
-		_, err = o.stdOut.Write(body)
-		if err != nil {
-			log.Printf("error writing to stdout %v", err)
+		o.writer.Write(body)
+		o.writer.Write([]byte("\n"))
+
+		if o.Color {
+			if req.APIError != nil {
+				o.stdOut.Write([]byte("\033[31m"))
+				o.stdOut.Write(body)
+				o.stdOut.Write([]byte("\033[0m\n"))
+			} else {
+				o.stdOut.Write([]byte("\033[32m"))
+				o.stdOut.Write(body)
+				o.stdOut.Write([]byte("\033[0m\n"))
+			}
+		} else {
+			o.stdOut.Write(body)
+			o.stdOut.Write([]byte("\n"))
 		}
-		o.stdOut.Write([]byte("\n"))
 	})
 }
 

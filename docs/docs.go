@@ -42,7 +42,10 @@ func ParseTemplate() error {
 	if err != nil {
 		return fmt.Errorf("could not execute template  %w", err)
 	}
-	f.Close()
+	if err := f.Close(); err != nil {
+		return fmt.Errorf("error closing index.html.md file %w", err)
+	}
+
 	return nil
 }
 
@@ -50,7 +53,9 @@ func EPGroups() map[Key]Group {
 	gs := make(map[Key]Group)
 	// first organize the endpoints into groups
 	for _, ep := range setup.EndpointsList() {
-		k := Key{Group: ep.Group, Version: ep.Version}
+		k := Key{
+			Group:   ep.Group,
+			Version: ep.Version}
 		gs[k] = Group{}
 	}
 

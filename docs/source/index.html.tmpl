@@ -29,13 +29,16 @@ meta:
 {{range $ep := $group.EPList -}}
 ## {{$ep.Name}}
 
+
 ```shell
-curl {{if ne $ep.Method.String "GET"}}-X {{$ep.Method.String}} {{end -}}
-"http://example.com{{$ep.FullPath}}" {{if ne $ep.FullPath "/"}}\
+{{range $m := $ep.Methods}}
+curl -X {{$m.String}} "http://example.com{{$ep.FullPath}}" {{if ne $ep.FullPath "/"}}\
   -H "Authorization: Bearer {token}"{{end}}{{if ne $ep.RequestType ""}}\
   -H 'Content-Type: application/json'{{end}}{{if ne $ep.MarshalReq "null"}}\ 
   --raw-data '{{$ep.MarshalReq}}'{{end}}
+{{end}}
 ```
+
 
 {{if ne $ep.MarshalReq "null"}}
 > The body of the request should be JSON and structured like this:
@@ -47,7 +50,7 @@ curl {{if ne $ep.Method.String "GET"}}-X {{$ep.Method.String}} {{end -}}
 
 
 {{if ne $ep.MarshalResp "null"}}
-> The above command returns JSON structured like this:
+> The above command(s) returns JSON structured like this:
 
 ```json
 {{$ep.MarshalResp}}
@@ -57,10 +60,11 @@ curl {{if ne $ep.Method.String "GET"}}-X {{$ep.Method.String}} {{end -}}
 {{$ep.Description}}
 
 ### HTTP Request
-
-`{{$ep.Method}} http://example.com{{$ep.FullPath}}`
+{{range $m := $ep.Methods}}
+`{{$m.String}} http://example.com{{$ep.FullPath}}`
 {{if ne $ep.RequestType ""}}
 - Content-Type: `{{$ep.RequestType}}`
+{{end}}
 {{end}}
 
 {{- $qp := len $ep.QueryParams -}}
@@ -126,7 +130,7 @@ Error Code | Meaning
 403 | Forbidden -- Unauthorized
 404 | Not Found -- The specified kittn could not be found.
 405 | Method Not Allowed -- You tried to access an endpoint with an invalid method.
-406 | Not Acceptable -- You requested a format that isn't json.
+406 | Not Acceptable -- The target resource does not have a representation that's acceptable to the user agent
 410 | Gone -- The resource requested has been removed from our servers.
 418 | I'm a teapot.
 429 | Too Many Requests -- Rate limits applied ! Slow down!

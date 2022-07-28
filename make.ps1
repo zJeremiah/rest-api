@@ -6,6 +6,7 @@ param(
 )
 
 $build = $true
+
 # This is the windows build script in powershell
 $folder = ".\deploy\bin"
 Remove-Item -Path $folder -Force -Recurse

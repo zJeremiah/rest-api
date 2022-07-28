@@ -23,6 +23,11 @@ type Struct struct {
 	BuildTime string `json:"build_time"`
 }
 
+type Response struct {
+	App    string `json:"app_name"`
+	Struct `json:"build_info"`
+}
+
 // Get returns version data as a string.
 func Get() string {
 	return fmt.Sprintf(
@@ -34,10 +39,13 @@ func Get() string {
 	)
 }
 
-func JSON() Struct {
-	return Struct{
-		runtime.Version(),
-		Version,
-		BuildTimeUTC,
+func JSON() Response {
+	return Response{
+		App: AppName,
+		Struct: Struct{
+			runtime.Version(),
+			Version,
+			BuildTimeUTC,
+		},
 	}
 }

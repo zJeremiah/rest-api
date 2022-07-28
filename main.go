@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
+
 	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -25,9 +25,11 @@ func main() {
 		Routes: make(setup.Endpoints),
 	}
 
-	c.Log.StdOut(os.Stdout)
 	config.New(c).Version(version.Get()).LoadOrDie()
 
+	c.Log.Debug = c.Debug
+	c.Log.Color = c.ColorLog
+	c.Log.InitLogger()  // initial the request logger
 	setup.InitConfig(c) // initialize the config
 	routes.InitRoutes() // adds the routes to the setup
 
@@ -42,13 +44,14 @@ func main() {
 	setup.Mux().Use(Cors())
 	setup.Mux().Use(middleware.StripSlashes)
 	setup.Mux().Use(c.Log.WriteRequest)
-
+	setup.Mux().Use(middleware.Compress(9))
 	setup.AddRoutes()
 
 	c.Log.Pretty = c.PrettyLog
 
 	// app will only build the markdown file for building api docs
 	if c.BuildDocs {
+		log.Println("building markdown file for api docs endpoints")
 		// build the api docs md file on run
 		err := docs.ParseTemplate()
 		if err != nil {
@@ -56,7 +59,12 @@ func main() {
 		}
 		return
 	}
+
 	log.Println("api documentation at /docs")
+	if c.Log.Color {
+		log.Println("enabled color output for request logs")
+	}
+
 	log.Printf("running api on port %d", c.Port)
 	http.ListenAndServe(fmt.Sprintf(":%d", c.Port), setup.Mux())
 }
