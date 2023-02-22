@@ -10,7 +10,6 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/hydronica/go-config"
-	"github.com/rest-api/docs"
 	"github.com/rest-api/internal/logger"
 	"github.com/rest-api/internal/setup"
 	"github.com/rest-api/internal/version"
@@ -49,20 +48,16 @@ func main() {
 
 	c.Log.Pretty = c.PrettyLog
 
-	// app will only build the markdown file for building api docs
-	if c.BuildDocs {
-		log.Println("building markdown file for api docs endpoints")
-		// build the api docs md file on run
-		err := docs.ParseTemplate()
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-		return
-	}
-
 	log.Println("api documentation at /docs")
 	if c.Log.Color {
 		log.Println("enabled color output for request logs")
+	}
+
+	if c.BuildDocs {
+		err := setup.BuildDocs()
+		if err != nil {
+			log.Println("error building swagger spec", err.Error())
+		}
 	}
 
 	log.Printf("running api on port %d", c.Port)

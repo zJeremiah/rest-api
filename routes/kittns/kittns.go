@@ -82,7 +82,7 @@ func KittenEP() setup.Endpoint {
 		ResponseBody: Kitten{ID: 1, Name: "Fluffums", Breed: "calico", Fluffy: 6, Cute: 7}, // example for docs
 		Description:  "This endpoint retrieves a specific kittn",
 		HandlerFunc:  GetKitten,
-		URLParams: []setup.Param{
+		PathParams: []setup.Param{
 			{Name: "id", Description: "the id for a kittn"},
 		},
 	}
@@ -128,7 +128,7 @@ func RMKittenEP() setup.Endpoint {
 		ResponseType: setup.ContentJSON,
 		Description:  "This endpoint deletes a specific kittn",
 		HandlerFunc:  RMKitten,
-		URLParams: []setup.Param{
+		PathParams: []setup.Param{
 			{Name: "id", Description: "the id for a kittn"},
 		},
 	}
@@ -170,8 +170,8 @@ func AddKittnEP() setup.Endpoint {
 		Description:  "This endpoint adds a new kittn",
 		HandlerFunc:  AddKittn,
 		JSONFields: []setup.Param{
-			{Name: "name", Required: "true", Description: "the kittn's name"},
-			{Name: "breed", Required: "true", Description: "the kittn's breed"},
+			{Name: "name", Required: true, Description: "the kittn's name"},
+			{Name: "breed", Required: true, Description: "the kittn's breed"},
 			{Name: "fluffiness", Description: "the fluffiness factor"},
 			{Name: "cuteness", Description: "the cuteness factor"},
 		},

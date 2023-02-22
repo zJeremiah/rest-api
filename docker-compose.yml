@@ -1,0 +1,34 @@
+version: "3.3"
+services:
+  signal:
+    environment:
+      - env=$env
+    image: registry.docker.private.linksynergy.com/rm/signal-api:$docker_tag
+    container_name: signal
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    networks:
+      - private_docker_network
+
+  swagger_ui:
+    environment:
+      - DEEP_LINKING=true
+      - FILTER=true
+      - BASE_URL=/docs
+      - URL=/docs/swagger.json
+      - DOC_EXPANSION=none
+      - DEFAULT_MODELS_EXPAND_DEPTH=10
+      - DEFAULT_MODEL_EXPAND_DEPTH=10
+    image: swaggerapi/swagger-ui
+    container_name: swagger_ui
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    networks:
+      - private_docker_network
+
+
+networks:
+  private_docker_network:
+    external: true

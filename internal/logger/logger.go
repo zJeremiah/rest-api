@@ -47,19 +47,21 @@ type Internal struct {
 }
 
 type Log struct {
-	ID          string      `json:"id"`
-	Host        string      `json:"host"`
-	URI         string      `json:"request_uri"`
-	Time        time.Time   `json:"request_time"`
-	Body        interface{} `json:"request_body,omitempty"`
-	ContentLen  int64       `json:"content_length,omitempty"`
-	Method      string      `json:"method"`
-	RemoteAddr  string      `json:"remote_address"`
-	UserAgent   string      `json:"user_agent,omitempty"`
-	ContentType string      `json:"content_type,omitempty"`
-	APIError    *Internal   `json:"error,omitempty"`
-	Latency     float64     `json:"latency"`
-	NoLog       bool        `json:"-"` // will cancel the request log
+	ID          string    `json:"id"`
+	Host        string    `json:"host"`
+	URI         string    `json:"request_uri"`
+	Time        time.Time `json:"request_time"`
+	Body        any       `json:"request_body,omitempty"`
+	ContentLen  int64     `json:"content_length,omitempty"`
+	Method      string    `json:"method"`
+	RemoteAddr  string    `json:"remote_address"`
+	UserAgent   string    `json:"user_agent,omitempty"`
+	ContentType string    `json:"content_type,omitempty"`
+	APIError    *Internal `json:"error,omitempty"`
+	Latency     float64   `json:"latency"`
+	RespCode    int       `json:"response_code"`
+	Response    string    `json:"response"`
+	NoLog       bool      `json:"-"` // will cancel the request log
 }
 
 type ctxRequestKey int
@@ -85,8 +87,23 @@ func (o *Options) InitLogger() {
 	}
 }
 
+type StatusRecorder struct {
+	http.ResponseWriter
+	Status int
+}
+
+func (r *StatusRecorder) WriteHeader(status int) {
+	r.Status = status
+	r.ResponseWriter.WriteHeader(status)
+}
+
 func (o *Options) WriteRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		rec := &StatusRecorder{
+			ResponseWriter: rw,
+			Status:         200,
+		}
+
 		id := r.Context().Value(middleware.RequestIDKey).(string)
 		var err error
 		start := time.Now()
@@ -104,12 +121,14 @@ func (o *Options) WriteRequest(next http.Handler) http.Handler {
 		}
 
 		r = r.WithContext(context.WithValue(r.Context(), RequestKey, req))
-		next.ServeHTTP(rw, r)
+		next.ServeHTTP(rec, r)
 		if req.NoLog {
 			return // return without writing log output
 		}
 		var body []byte
 		req.Latency = time.Since(start).Seconds()
+		req.RespCode = rec.Status
+		req.Response = http.StatusText(req.RespCode)
 		if o.Pretty {
 			body, err = json.MarshalIndent(req, "", "  ")
 			if err != nil {
@@ -126,7 +145,7 @@ func (o *Options) WriteRequest(next http.Handler) http.Handler {
 		o.writer.Write([]byte("\n"))
 
 		if o.Color {
-			if req.APIError != nil {
+			if req.APIError != nil || req.RespCode/200 != 1 {
 				o.stdOut.Write([]byte("\033[31m"))
 				o.stdOut.Write(body)
 				o.stdOut.Write([]byte("\033[0m\n"))
@@ -142,7 +161,7 @@ func (o *Options) WriteRequest(next http.Handler) http.Handler {
 	})
 }
 
-func retrieveBody(req *http.Request) (i interface{}) {
+func retrieveBody(req *http.Request) (i any) {
 	buf, err := io.ReadAll(req.Body)
 	if err != nil {
 		return "could not read request body " + err.Error()

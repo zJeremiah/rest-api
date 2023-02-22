@@ -1,9 +1,8 @@
 # binary
 rest-api
 rest-api.exe
-docs/build/index.html.tmpl
-docs/source/index.html.md
-
+swagger.json
+config.toml
 
 .idea
 .vscode

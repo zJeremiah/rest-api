@@ -1,0 +1,20 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "description": "REST API Endpoints",
+    "version": "1.0.0",
+    "title": "REST API"
+  },
+  "servers": [
+    { "url": "https://your.dev.server.com",           "description": "Development server"  },
+    { "url": "https://your.qa.sever.com",             "description": "QA server"           },
+    { "url": "https://iap-api.rakutenmarketing.com/", "description": "Production server"   }
+  ],
+  "tags": [
+    { "name": "group-tag-name", "description": "The tag name that swagger-ui uses to group endpoints"                        },
+    { "name": "general",          "description": "General Endpoint Paths"                                                    }
+  ],
+  "paths": {
+    
+  }
+}

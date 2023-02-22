@@ -12,7 +12,8 @@ import (
 )
 
 // endpoint groups are sorted by these methods
-//  for api documentation
+//
+//	for api documentation
 const (
 	GET Method = iota + 1
 	HEAD
@@ -35,30 +36,30 @@ type Methods []Method
 // this is used to make the correct request to the handler
 // and also used to generate the slate api docs
 type Endpoint struct {
-	Version      string      // the version pathing v1, v2, etc...
-	Group        string      // the name of the group path, is part of the path /v1/name/{path}
-	Path         string      // the URI path for the just the endpoint must start with a forward slash /
-	FullPath     string      // (auto built) the full uri path for the endpoint /{version}/{group}/{path}
-	Methods      Methods     // the HTTP methods to use for the endpoint GET, POST etc...
-	RequestType  string      // The request type is the ContentType for the request
-	ResponseType string      // This is the ContentType that will be returned in the response (normally application/json)
-	RequestBody  interface{} // This is used to generate the api docs JSON object string for the request
-	ResponseBody interface{} // This is used to generate the api docs JSON object string for the response
-	HandlerFunc  Handler     // the Handler function is called when the router matches the endpoint path
-	Pretty       bool        // output the json string as pretty format when true
+	Version      string  // the version pathing v1, v2, etc...
+	Group        string  // the name of the group path, is part of the path /v1/name/{path}
+	Path         string  // the URI path for the just the endpoint must start with a forward slash /
+	FullPath     string  // (auto built) the full uri path for the endpoint /{version}/{group}/{path}
+	Methods      Methods // the HTTP methods to use for the endpoint GET, POST etc...
+	RequestType  string  // The request type is the ContentType for the request
+	ResponseType string  // This is the ContentType that will be returned in the response (normally application/json)
+	RequestBody  any     // This is used to generate the api docs JSON object string for the request
+	ResponseBody any     // This is used to generate the api docs JSON object string for the response
+	HandlerFunc  Handler // the Handler function is called when the router matches the endpoint path
+	Pretty       bool    // output the json string as pretty format when true
 
 	// These are used to define the api documentation
 	Name        string  // (api docs) a simple statement for the endpoint
 	Description string  // (api docs) The description of the endpoint for api docs
 	QueryParams []Param // (api docs) listed query params
-	URLParams   []Param // (api docs) listed url's path paramaters i.e., http://mydomain.com/{section}/{id}
+	PathParams  []Param // (api docs) listed url's path paramaters i.e., http://mydomain.com/{section}/{id}
 	JSONFields  []Param // (api docs) listed JSON fields for POST/PUT request body
 }
 
 type Param struct {
 	Name        string
 	Description string
-	Required    string // a value of yes or no here
+	Required    bool // a value of yes or no here
 }
 
 type Endpoints map[string]Endpoint
@@ -75,8 +76,9 @@ type Config struct {
 	Debug     bool            `toml:"debug" json:"debug" flag:"debug" comment:"show debug logging"`
 	Log       *logger.Options `toml:"log_options" json:"log_options"`
 	ColorLog  bool            `flag:"color" toml:"color" json:"color" comment:"use linux coloring for request logs"`
-	PrettyLog bool            `flag:"pretty" comment:"will pretty print request logs"`
-	BuildDocs bool            `flag:"docs" comment:"flag to build the docs md file for slate"`
+	PrettyLog bool            `toml:"pretty_log" flag:"pretty" comment:"will pretty print request logs"`
+	BuildDocs bool            `toml:"build_docs" flag:"docs" comment:"flag to build the swagger api spec for the swagger ui"`
+	SwaggerUI string          `toml:"swagger_ui" flag:"swagger" comment:"the origin name for the swagger ui"`
 	mux       *chi.Mux
 	Routes    Endpoints
 }
@@ -186,9 +188,9 @@ func validate() error {
 				urlParams++
 			}
 		}
-		if len(e.URLParams) != urlParams {
+		if len(e.PathParams) != urlParams {
 			return fmt.Errorf("params in path do not match URLParams %v %v (%s)",
-				e.URLParams, e.Methods, e.FullPath)
+				e.PathParams, e.Methods, e.FullPath)
 		}
 		if e.RequestBody != nil && len(e.JSONFields) == 0 {
 			return fmt.Errorf("json request fields need to be defined in JSONFields %v (%s)",
@@ -200,7 +202,9 @@ func validate() error {
 }
 
 // addRoutes will take each endpoint and build all path routes
-//  endpoints, setting the handler func, path and method
+//
+//	endpoints, setting the handler func, path and method
+//
 // This must happen after all middleware has been initialized
 func AddRoutes() {
 	if apiConfig == nil {

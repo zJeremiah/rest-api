@@ -101,11 +101,11 @@ func ErrorHandler(w http.ResponseWriter, r *http.Request) error {
 }
 
 type PostTest struct {
-	ID    int                    `json:"id"`
-	Name  string                 `json:"name"`
-	Float float64                `json:"float"`
-	Map   map[string]interface{} `json:"map"`
-	Array []interface{}          `json:"array"`
+	ID    int            `json:"id"`
+	Name  string         `json:"name"`
+	Float float64        `json:"float"`
+	Map   map[string]any `json:"map"`
+	Array []any          `json:"array"`
 }
 
 // build the endpoint and then add the endpoint to the setup endpoints
@@ -122,21 +122,21 @@ func PostTestEP() setup.Endpoint {
 			ID:    123,
 			Name:  "Alex Doe",
 			Float: 123.456,
-			Map: map[string]interface{}{
+			Map: map[string]any{
 				"test":  "value",
 				"test2": 432,
 			},
-			Array: []interface{}{"string value", 123.12, map[string]string{"key": "value"}, 6575},
+			Array: []any{"string value", 123.12, map[string]string{"key": "value"}, 6575},
 		},
 		ResponseBody: PostTest{
 			ID:    123,
 			Name:  "Alex Doe",
 			Float: 123.456,
-			Map: map[string]interface{}{
+			Map: map[string]any{
 				"test":  "value",
 				"test2": 432,
 			},
-			Array: []interface{}{"string value", 123.12, map[string]string{"key": "value"}, 6575},
+			Array: []any{"string value", 123.12, map[string]string{"key": "value"}, 6575},
 		},
 		JSONFields: []setup.Param{
 			{Name: "id"}, {Name: "name"}, {Name: "float"}, {Name: "map"}, {Name: "array"},
